@@ -1,0 +1,2839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Luke's Big Adventure — Level 1</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #1e1b18;
+      font-family: 'Nunito', sans-serif;
+    }
+    h1, h2, .font-display {
+      font-family: 'Fredoka', sans-serif;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+    }
+    .key-cap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+      height: 24px;
+      padding: 0 6px;
+      border-radius: 6px;
+      background: linear-gradient(180deg, #ffffff 0%, #e7e2da 100%);
+      border: 1px solid #c6beb2;
+      box-shadow: 0 2px 0 #b3aa9c;
+      color: #3a322c;
+      font-weight: 800;
+      font-size: 11px;
+    }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+    }
+    .animate-float {
+      animation: floatSlow 2.5s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="relative w-full h-full flex flex-col justify-between">
+
+  <!-- Top HUD Bar -->
+  <header class="pointer-events-none fixed top-0 left-0 right-0 z-20 p-3 sm:p-4 flex flex-wrap items-center justify-between gap-2">
+    <!-- Left Counters: Treats & Belly Rubs -->
+    <div class="pointer-events-auto flex flex-wrap items-center gap-2 sm:gap-3">
+      <!-- Treat Meter -->
+      <div class="bg-amber-50/95 backdrop-blur-md border-2 border-amber-800/20 rounded-2xl px-3.5 py-2 shadow-lg flex items-center gap-3">
+        <div class="w-8 h-8 rounded-xl bg-amber-500/20 flex items-center justify-center text-lg">🐟</div>
+        <div>
+          <div class="flex items-center justify-between gap-3 text-xs font-extrabold uppercase tracking-wider text-amber-900/70">
+            <span>Treats</span>
+            <span id="treatText" class="text-amber-950 font-black">0 / 100</span>
+          </div>
+          <div class="w-28 sm:w-36 h-3 bg-amber-950/15 rounded-full overflow-hidden mt-1 p-0.5">
+            <div id="treatBar" class="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-200" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Belly Rub Meter -->
+      <div id="bellyCard" class="bg-rose-50/95 backdrop-blur-md border-2 border-rose-800/20 rounded-2xl px-3.5 py-2 shadow-lg flex items-center gap-3 transition-transform duration-200">
+        <div class="w-8 h-8 rounded-xl bg-rose-500/20 flex items-center justify-center text-lg">🐾</div>
+        <div>
+          <div class="flex items-center justify-between gap-3 text-xs font-extrabold uppercase tracking-wider text-rose-900/70">
+            <span>Belly Rubs</span>
+            <span id="bellyText" class="text-rose-950 font-black">0 / 10</span>
+          </div>
+          <div class="w-24 sm:w-32 h-3 bg-rose-950/15 rounded-full overflow-hidden mt-1 p-0.5">
+            <div id="bellyBar" class="h-full bg-gradient-to-r from-rose-400 to-pink-500 rounded-full transition-all duration-200" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center/Right Zone Badge & Sound Toggle -->
+    <div class="pointer-events-auto flex items-center gap-2 sm:gap-3">
+      <div class="bg-stone-900/85 backdrop-blur-md text-amber-50 border border-white/15 rounded-2xl px-4 py-2 shadow-lg flex items-center gap-2">
+        <span id="zoneIcon" class="text-base">🏠</span>
+        <div class="leading-tight">
+          <div class="text-[10px] uppercase tracking-widest text-amber-300/80 font-bold">Level 1 Zone</div>
+          <div id="zoneName" class="text-sm font-display font-semibold">Cozy House</div>
+        </div>
+      </div>
+
+      <button id="soundToggle" type="button" title="Toggle Sound Effects"
+        class="bg-amber-50/95 hover:bg-white active:scale-95 text-stone-800 border-2 border-amber-900/20 rounded-2xl px-3.5 py-2.5 shadow-lg font-extrabold text-sm flex items-center gap-1.5 transition">
+        <span id="soundIcon">🔊</span>
+        <span class="hidden sm:inline" id="soundLabel">SFX On</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Game Canvas -->
+  <main class="relative w-full h-full">
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Belly Rub Floating Callout Banner -->
+    <div id="bellyPromptBanner" class="hidden pointer-events-none fixed top-20 left-1/2 -translate-x-1/2 z-20">
+      <div class="animate-float bg-rose-600 text-white font-display font-semibold px-5 py-2 rounded-full shadow-xl border-2 border-rose-200 text-sm sm:text-base flex items-center gap-2">
+        <span>💖</span>
+        <span>Luke rolled over! Click or tap Luke's belly for rubs! (0/10)</span>
+      </div>
+    </div>
+
+    <!-- Start / Title Overlay -->
+    <div id="startModal" class="fixed inset-0 z-30 bg-stone-950/65 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-[#fdf8f0] border-4 border-amber-900/25 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl text-center">
+        <div class="inline-flex items-center gap-2 bg-amber-500/20 text-amber-900 font-extrabold text-xs uppercase tracking-widest px-3 py-1 rounded-full mb-3">
+          <span>🐱 Browser Pilot • Level 1</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-display font-bold text-stone-900 mb-2">Luke's Big Adventure</h1>
+        <p class="text-stone-600 text-sm sm:text-base mb-5 leading-relaxed">
+          Guide <strong class="text-stone-900">Luke</strong> the tabby cat through the <strong class="text-amber-800">House</strong>, <strong class="text-emerald-800">Yard</strong>, and <strong class="text-slate-700">Garage</strong> to reach <strong class="text-stone-900">Fritz</strong> at the Food Station!
+        </p>
+
+        <div class="grid grid-cols-2 gap-2.5 text-left bg-amber-950/5 rounded-2xl p-4 mb-6 text-xs sm:text-sm text-stone-700">
+          <div class="flex items-center gap-2"><span class="key-cap">←</span><span class="key-cap">→</span> <span>Walk / Run</span></div>
+          <div class="flex items-center gap-2"><span class="key-cap">↓</span>+<span class="key-cap">←→</span> <span>Crouch & Crawl</span></div>
+          <div class="flex items-center gap-2"><span class="key-cap">Space</span> / <span class="key-cap">↑</span> <span>Jump</span></div>
+          <div class="flex items-center gap-2"><span class="key-cap">E</span> <span>Eat Treats</span></div>
+          <div class="flex items-center gap-2"><span class="key-cap">R</span> <span>Roll Over (Belly Rubs!)</span></div>
+          <div class="flex items-center gap-2"><span class="key-cap">G</span> <span>Groom &nbsp;•&nbsp; <span class="key-cap">S</span> Scratch</span></div>
+        </div>
+
+        <button id="startBtn" type="button"
+          class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-b from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 active:translate-y-0.5 text-white font-display font-bold text-lg shadow-lg shadow-orange-600/30 transition cursor-pointer">
+          🐾 Start Level 1
+        </button>
+      </div>
+    </div>
+
+    <!-- Victory Overlay when reaching Fritz -->
+    <div id="victoryModal" class="hidden fixed inset-0 z-30 bg-stone-950/65 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="bg-[#fdf8f0] border-4 border-emerald-700/30 rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl text-center">
+        <div class="text-5xl mb-2">🍲😻</div>
+        <h2 class="text-3xl font-display font-bold text-stone-900 mb-1">Dinner Time!</h2>
+        <p class="text-stone-600 text-sm sm:text-base mb-5">
+          Luke reached Fritz at the Food Station and let out a big, happy <strong class="text-amber-700">Meow~!</strong>
+        </p>
+
+        <div class="grid grid-cols-3 gap-2 bg-stone-900/5 rounded-2xl p-3.5 mb-6">
+          <div>
+            <div class="text-xs font-bold uppercase text-stone-500">Treats</div>
+            <div id="finalTreats" class="text-xl font-display font-bold text-amber-600">0 / 100</div>
+          </div>
+          <div>
+            <div class="text-xs font-bold uppercase text-stone-500">Belly Rubs</div>
+            <div id="finalRubs" class="text-xl font-display font-bold text-rose-600">0</div>
+          </div>
+          <div>
+            <div class="text-xs font-bold uppercase text-stone-500">Scratches</div>
+            <div id="finalScratches" class="text-xl font-display font-bold text-emerald-700">0</div>
+          </div>
+        </div>
+
+        <button id="playAgainBtn" type="button"
+          class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-b from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 active:translate-y-0.5 text-white font-display font-bold text-lg shadow-lg shadow-teal-600/30 transition cursor-pointer">
+          🔄 Play Level 1 Again
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom Control Legend (Desktop) & Touch Controls (Mobile/Tablet Ready) -->
+  <footer class="pointer-events-none fixed bottom-0 left-0 right-0 z-20 p-2.5 sm:p-3 flex flex-col items-center gap-2">
+    <!-- Mobile / Touch Controls Bar -->
+    <div id="touchControls" class="md:hidden pointer-events-auto w-full flex items-end justify-between px-1 pb-1">
+      <!-- D-Pad -->
+      <div class="flex items-center gap-1.5">
+        <button data-key="ArrowLeft" class="touch-btn w-12 h-12 rounded-2xl bg-stone-900/80 text-white font-bold text-xl border border-white/20 active:bg-amber-500">◀</button>
+        <button data-key="ArrowDown" class="touch-btn w-12 h-12 rounded-2xl bg-stone-900/80 text-white font-bold text-lg border border-white/20 active:bg-amber-500">▼</button>
+        <button data-key="ArrowRight" class="touch-btn w-12 h-12 rounded-2xl bg-stone-900/80 text-white font-bold text-xl border border-white/20 active:bg-amber-500">▶</button>
+      </div>
+      <!-- Action Pad -->
+      <div class="flex items-center gap-1.5">
+        <button data-action="eat" class="w-11 h-11 rounded-2xl bg-amber-600/90 text-white font-extrabold text-xs border border-white/25 active:scale-95">E<br>Eat</button>
+        <button data-action="roll" class="w-11 h-11 rounded-2xl bg-rose-600/90 text-white font-extrabold text-xs border border-white/25 active:scale-95">R<br>Roll</button>
+        <button data-action="groom" class="w-11 h-11 rounded-2xl bg-sky-600/90 text-white font-extrabold text-xs border border-white/25 active:scale-95">G<br>Groom</button>
+        <button data-action="scratch" class="w-11 h-11 rounded-2xl bg-emerald-600/90 text-white font-extrabold text-xs border border-white/25 active:scale-95">S<br>Claw</button>
+        <button data-key="Space" class="touch-btn w-14 h-12 rounded-2xl bg-orange-500/95 text-white font-extrabold text-xs border border-white/30 active:scale-95">JUMP</button>
+      </div>
+    </div>
+
+    <!-- Desktop Control Pill Legend -->
+    <div class="hidden md:flex pointer-events-auto items-center gap-3 bg-stone-900/85 backdrop-blur-md text-stone-200 border border-white/15 rounded-full px-5 py-2 shadow-xl text-xs font-bold">
+      <span class="flex items-center gap-1.5"><span class="key-cap">←</span><span class="key-cap">→</span> Move</span>
+      <span class="text-white/25">|</span>
+      <span class="flex items-center gap-1.5"><span class="key-cap">↓</span> Crouch / Crawl</span>
+      <span class="text-white/25">|</span>
+      <span class="flex items-center gap-1.5"><span class="key-cap">Space</span> / <span class="key-cap">↑</span> Jump</span>
+      <span class="text-white/25">|</span>
+      <span class="flex items-center gap-1.5"><span class="key-cap">E</span> Eat</span>
+      <span class="text-white/25">|</span>
+      <span class="flex items-center gap-1.5"><span class="key-cap">R</span> Roll Over</span>
+      <span class="text-white/25">|</span>
+      <span class="flex items-center gap-1.5"><span class="key-cap">G</span> Groom</span>
+      <span class="text-white/25">|</span>
+      <span class="flex items-center gap-1.5"><span class="key-cap">S</span> Scratch Post</span>
+    </div>
+  </footer>
+
+  <script>
+    /**
+     * ============================================================================
+     * LUKE'S BIG ADVENTURE — LEVEL 1 (BROWSER PILOT)
+     * Complete single-file 2D platformer with procedural feline animation,
+     * Web Audio API sound effects, and House -> Yard -> Garage level progression.
+     * ============================================================================
+     */
+
+    // ==========================================================================
+    // 1. PROCEDURAL WEB AUDIO SOUND ENGINE (Zero External Audio Files Needed)
+    // ==========================================================================
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.stepTimer = 0;
+      }
+
+      unlock() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            this.ctx = new AudioCtx();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      // Soft paw step tap
+      playStep(isCrawl = false) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        const baseFreq = isCrawl ? 95 : 130 + Math.random() * 25;
+        osc.frequency.setValueAtTime(baseFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(45, now + 0.05);
+
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.055);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      }
+
+      // Bouncy cartoon "bo-oi-oink!" springy leap
+      playJump() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        const osc = this.ctx.createOscillator();
+        const wobbleLfo = this.ctx.createOscillator();
+        const wobbleGain = this.ctx.createGain();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        // Classic cartoon boink pitch sweep with an elastic dip and upward snap
+        osc.frequency.setValueAtTime(165, now);
+        osc.frequency.exponentialRampToValueAtTime(360, now + 0.055);
+        osc.frequency.exponentialRampToValueAtTime(245, now + 0.11);
+        osc.frequency.exponentialRampToValueAtTime(590, now + 0.25);
+
+        // Fast springy vibrato wobble for the "oi-oink" texture
+        wobbleLfo.type = 'sine';
+        wobbleLfo.frequency.setValueAtTime(34, now);
+        wobbleGain.gain.setValueAtTime(48, now);
+        wobbleGain.gain.exponentialRampToValueAtTime(8, now + 0.26);
+
+        wobbleLfo.connect(wobbleGain);
+        wobbleGain.connect(osc.frequency);
+
+        gain.gain.setValueAtTime(0.01, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.02);
+        gain.gain.setValueAtTime(0.15, now + 0.16);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        wobbleLfo.start(now);
+        osc.stop(now + 0.29);
+        wobbleLfo.stop(now + 0.29);
+      }
+
+      // Cute "gobble-gobble" bubbly chews + crispy kibble crunches
+      playEat() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // 1. Crispy kibble noise crunches (3 rapid bites)
+        [0, 0.075, 0.15].forEach((offset, idx) => {
+          const dur = 0.055;
+          const bufferSize = Math.floor(this.ctx.sampleRate * dur);
+          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            // Granular crackle spikes for dry kibble texture
+            const spike = Math.random() > 0.65 ? 1.0 : 0.25;
+            data[i] = (Math.random() * 2 - 1) * spike * Math.exp(-i / (bufferSize * 0.45));
+          }
+
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buffer;
+
+          const filter = this.ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.setValueAtTime(1400 + idx * 240, now + offset);
+          filter.Q.setValueAtTime(1.8, now + offset);
+
+          const nGain = this.ctx.createGain();
+          nGain.gain.setValueAtTime(0.22, now + offset);
+          nGain.gain.exponentialRampToValueAtTime(0.001, now + offset + dur);
+
+          noise.connect(filter);
+          filter.connect(nGain);
+          nGain.connect(this.ctx.destination);
+          noise.start(now + offset);
+        });
+
+        // 2. Playful bubbly "gobble-gobble" pitch-bouncing chew chirps
+        const gobbleNotes = [
+          { t: 0.02, f1: 310, f2: 520, f3: 370 },
+          { t: 0.095, f1: 350, f2: 590, f3: 420 },
+          { t: 0.17, f1: 410, f2: 680, f3: 540 }
+        ];
+        gobbleNotes.forEach((g) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(g.f1, now + g.t);
+          osc.frequency.exponentialRampToValueAtTime(g.f2, now + g.t + 0.032);
+          osc.frequency.exponentialRampToValueAtTime(g.f3, now + g.t + 0.065);
+
+          gain.gain.setValueAtTime(0.01, now + g.t);
+          gain.gain.linearRampToValueAtTime(0.12, now + g.t + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + g.t + 0.07);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + g.t);
+          osc.stop(now + g.t + 0.075);
+        });
+      }
+
+      // Happy feline activation trill when rolling over (R)
+      playRollOver() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const lfo = this.ctx.createOscillator();
+        const lfoGain = this.ctx.createGain();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(360, now);
+        osc.frequency.exponentialRampToValueAtTime(640, now + 0.28);
+
+        lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(28, now);
+        lfoGain.gain.setValueAtTime(35, now);
+
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.32);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        lfo.start(now);
+        osc.stop(now + 0.33);
+        lfo.stop(now + 0.33);
+      }
+
+      // Warm purr + rising heart note for each belly rub
+      playBellyRub(rubCount) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // Low purr rumble
+        const purr = this.ctx.createOscillator();
+        const pGain = this.ctx.createGain();
+        purr.type = 'sawtooth';
+        purr.frequency.setValueAtTime(52, now);
+        pGain.gain.setValueAtTime(0.06, now);
+        pGain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+        purr.connect(pGain);
+        pGain.connect(this.ctx.destination);
+        purr.start(now);
+        purr.stop(now + 0.23);
+
+        // Rising heart chime
+        const note = this.ctx.createOscillator();
+        const nGain = this.ctx.createGain();
+        note.type = 'sine';
+        const freq = 440 + rubCount * 42;
+        note.frequency.setValueAtTime(freq, now);
+        note.frequency.exponentialRampToValueAtTime(freq * 1.18, now + 0.16);
+        nGain.gain.setValueAtTime(0.11, now);
+        nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        note.connect(nGain);
+        nGain.connect(this.ctx.destination);
+        note.start(now);
+        note.stop(now + 0.19);
+      }
+
+      // Soft rhythmic paw-licking groom sound (G)
+      playGroom() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(860, now + 0.09);
+
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      }
+
+      // Claws scratching across corrugated cardboard (multi-stroke hollow box rasp + rib clicks)
+      playScratch() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // Three quick rhythmic claw rakes across corrugated cardboard ridges
+        const strokes = [
+          { offset: 0.0, dur: 0.12, baseFreq: 480 },
+          { offset: 0.14, dur: 0.11, baseFreq: 560 },
+          { offset: 0.27, dur: 0.13, baseFreq: 450 }
+        ];
+
+        strokes.forEach((stroke) => {
+          const sampleCount = Math.floor(this.ctx.sampleRate * stroke.dur);
+          const buffer = this.ctx.createBuffer(1, sampleCount, this.ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+
+          // Simulate claws catching each cardboard corrugation ridge (~85 ridges/sec)
+          const ridgeRate = 85;
+          for (let i = 0; i < sampleCount; i++) {
+            const t = i / this.ctx.sampleRate;
+            const env = Math.sin((i / sampleCount) * Math.PI);
+            const ridgeMod = 0.45 + 0.55 * Math.pow(Math.max(0, Math.sin(2 * Math.PI * ridgeRate * t)), 2);
+            data[i] = (Math.random() * 2 - 1) * env * ridgeMod;
+          }
+
+          const noise = this.ctx.createBufferSource();
+          noise.buffer = buffer;
+
+          // Hollow cardboard box body resonance (mid-low bandpass)
+          const boxBodyFilter = this.ctx.createBiquadFilter();
+          boxBodyFilter.type = 'bandpass';
+          boxBodyFilter.frequency.setValueAtTime(stroke.baseFreq, now + stroke.offset);
+          boxBodyFilter.frequency.linearRampToValueAtTime(stroke.baseFreq * 1.35, now + stroke.offset + stroke.dur);
+          boxBodyFilter.Q.setValueAtTime(2.6, now + stroke.offset);
+
+          // Secondary paper-surface rasp peak
+          const paperRaspFilter = this.ctx.createBiquadFilter();
+          paperRaspFilter.type = 'peaking';
+          paperRaspFilter.frequency.setValueAtTime(860, now + stroke.offset);
+          paperRaspFilter.gain.setValueAtTime(7, now + stroke.offset);
+
+          const gain = this.ctx.createGain();
+          gain.gain.setValueAtTime(0.28, now + stroke.offset);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + stroke.offset + stroke.dur);
+
+          noise.connect(boxBodyFilter);
+          boxBodyFilter.connect(paperRaspFilter);
+          paperRaspFilter.connect(gain);
+          gain.connect(this.ctx.destination);
+          noise.start(now + stroke.offset);
+        });
+      }
+
+      // Surprised "Mrow!" when bumping an obstacle
+      playBumpMeow() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(420, now);
+        osc.frequency.linearRampToValueAtTime(620, now + 0.08);
+        osc.frequency.exponentialRampToValueAtTime(290, now + 0.25);
+
+        gain.gain.setValueAtTime(0.14, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.27);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.28);
+      }
+
+      // Expressive, joyful celebratory "Meow~!" when reaching Fritz!
+      playHappyGoalMeow() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // Expressive two-part feline meow ("Me-ooww~!")
+        const osc = this.ctx.createOscillator();
+        const vib = this.ctx.createOscillator();
+        const vibGain = this.ctx.createGain();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(390, now);
+        osc.frequency.linearRampToValueAtTime(740, now + 0.18);
+        osc.frequency.linearRampToValueAtTime(680, now + 0.42);
+        osc.frequency.exponentialRampToValueAtTime(440, now + 0.72);
+
+        vib.type = 'sine';
+        vib.frequency.setValueAtTime(14, now);
+        vibGain.gain.setValueAtTime(16, now);
+        vib.connect(vibGain);
+        vibGain.connect(osc.frequency);
+
+        gain.gain.setValueAtTime(0.01, now);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.08);
+        gain.gain.setValueAtTime(0.16, now + 0.45);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        vib.start(now);
+        osc.stop(now + 0.76);
+        vib.stop(now + 0.76);
+
+        // Joyful victory arpeggio behind the meow
+        const notes = [523.25, 659.25, 783.99, 1046.5];
+        notes.forEach((freq, i) => {
+          const chime = this.ctx.createOscillator();
+          const cGain = this.ctx.createGain();
+          chime.type = 'sine';
+          const t = now + 0.25 + i * 0.11;
+          chime.frequency.setValueAtTime(freq, t);
+          cGain.gain.setValueAtTime(0.09, t);
+          cGain.gain.exponentialRampToValueAtTime(0.001, t + 0.35);
+          chime.connect(cGain);
+          cGain.connect(this.ctx.destination);
+          chime.start(t);
+          chime.stop(t + 0.36);
+        });
+      }
+    }
+
+    const sfx = new SoundEngine();
+
+    // ==========================================================================
+    // 2. LEVEL 1 WORLD CONFIGURATION (House -> Yard -> Garage -> Fritz)
+    // ==========================================================================
+    const WORLD_WIDTH = 6400;
+    const GROUND_Y = 505; // Luke's active Z=0 ground plane line
+    const VIRTUAL_HEIGHT = 620;
+
+    // Zone boundaries (expanded for generous runway between obstacles & crawl tunnels)
+    const ZONE_YARD_START = 2150;
+    const ZONE_GARAGE_START = 4350;
+
+    // Platforms (solid Z=0 gameplay objects with wide spacing & clear crawl runways)
+    const platforms = [
+      // --- ZONE 1: COZY HOUSE (0 - 2150) ---
+      { x: 310, y: 418, w: 185, h: 20, style: 'sofa', label: 'Plush Sofa' },
+      { x: 610, y: 342, w: 155, h: 18, style: 'shelf', label: 'Bookshelf' },
+      { x: 875, y: 268, w: 165, h: 18, style: 'shelf', label: 'Top Shelf' },
+      // Wide runway before and after the low coffee table crawl tunnel
+      { x: 1460, y: 436, w: 250, h: 18, style: 'table_low', legs: true, crawlHint: true },
+      { x: 1875, y: 392, w: 165, h: 20, style: 'counter', label: 'Window Bench' },
+
+      // --- ZONE 2: SUNNY BACKYARD (2150 - 4350) ---
+      { x: 2320, y: 422, w: 165, h: 20, style: 'planter', label: 'Planter Box' },
+      { x: 2610, y: 345, w: 165, h: 20, style: 'planter', label: 'Garden Trellis' },
+      { x: 2890, y: 270, w: 175, h: 20, style: 'branch', label: 'Tree Branch' },
+      // Wide runway around the low patio bench crawl tunnel
+      { x: 3480, y: 436, w: 270, h: 18, style: 'patio_low', legs: true, crawlHint: true },
+      { x: 3920, y: 405, w: 170, h: 20, style: 'planter', label: 'Garden Step' },
+      { x: 4135, y: 332, w: 155, h: 20, style: 'fence_ledge', label: 'Fence Post' },
+
+      // --- ZONE 3: GARAGE & FOOD STATION (4350 - 6400) ---
+      { x: 4540, y: 412, w: 165, h: 22, style: 'crate', label: 'Storage Crate' },
+      { x: 4820, y: 332, w: 185, h: 20, style: 'workbench', label: 'Workbench' },
+      // Wide runway around the low garage storage rack crawl tunnel
+      { x: 5390, y: 436, w: 270, h: 18, style: 'metal_low', legs: true, crawlHint: true },
+      { x: 5830, y: 386, w: 155, h: 22, style: 'crate', label: 'Tool Chest' }
+    ];
+
+    // Interactive Z=0 Scratching Posts (Press S nearby)
+    const scratchingPosts = [
+      { x: 185, y: GROUND_Y - 105, w: 34, h: 105, zone: 'house', scratches: 0 },
+      { x: 3810, y: GROUND_Y - 105, w: 34, h: 105, zone: 'yard', scratches: 0 },
+      { x: 5250, y: GROUND_Y - 105, w: 34, h: 105, zone: 'garage', scratches: 0 }
+    ];
+
+    // Gentle Z=0 Knockback Obstacles (spaced well away from crawl-under tunnels)
+    const obstacles = [
+      { x: 1175, y: GROUND_Y - 40, w: 46, h: 40, type: 'vacuum', label: 'Robot Vacuum' },
+      { x: 3205, y: GROUND_Y - 38, w: 44, h: 38, type: 'pot', label: 'Flower Pot' },
+      { x: 5095, y: GROUND_Y - 42, w: 50, h: 42, type: 'toolbox', label: 'Red Toolbox' }
+    ];
+
+    /**
+     * 2.5D Z-AXIS DEPTH PROPS (Non-interactive background/midground & foreground layers)
+     * - z < 0: Recessed deeper into the room/yard/garage (slower parallax, elevated floor
+     *   contact line, smaller scale 0.78x-0.88x, soft atmospheric haze & softer contrast).
+     * - z > 0: Close foreground framing silhouettes (faster parallax, subtle translucent edge).
+     */
+    const depthProps = [
+      // --- HOUSE DEEP & MIDGROUND Z-LAYER PROPS (z = -0.32 to -0.18) ---
+      { zone: 'house', kind: 'floor_lamp', x: 110, z: -0.26, scale: 0.84 },
+      { zone: 'house', kind: 'bookcase_bg', x: 470, z: -0.30, scale: 0.80 },
+      { zone: 'house', kind: 'armchair_bg', x: 790, z: -0.24, scale: 0.85 },
+      { zone: 'house', kind: 'houseplant_bg', x: 1080, z: -0.22, scale: 0.86 },
+      { zone: 'house', kind: 'sideboard_bg', x: 1360, z: -0.28, scale: 0.82 },
+      { zone: 'house', kind: 'coat_rack_bg', x: 1760, z: -0.24, scale: 0.85 },
+
+      // --- YARD DEEP & MIDGROUND Z-LAYER PROPS ---
+      { zone: 'yard', kind: 'oak_tree_bg', x: 2240, z: -0.34, scale: 0.78 },
+      { zone: 'yard', kind: 'birdbath_bg', x: 2540, z: -0.24, scale: 0.84 },
+      { zone: 'yard', kind: 'garden_shed_bg', x: 2820, z: -0.32, scale: 0.80 },
+      { zone: 'yard', kind: 'hedge_bush_bg', x: 3140, z: -0.22, scale: 0.86 },
+      { zone: 'yard', kind: 'oak_tree_bg', x: 3420, z: -0.34, scale: 0.79 },
+      { zone: 'yard', kind: 'wheelbarrow_bg', x: 3740, z: -0.23, scale: 0.85 },
+      { zone: 'yard', kind: 'hedge_bush_bg', x: 4040, z: -0.25, scale: 0.83 },
+
+      // --- GARAGE DEEP & MIDGROUND Z-LAYER PROPS ---
+      { zone: 'garage', kind: 'shelving_unit_bg', x: 4460, z: -0.30, scale: 0.80 },
+      { zone: 'garage', kind: 'stacked_tires_bg', x: 4760, z: -0.24, scale: 0.85 },
+      { zone: 'garage', kind: 'bike_rack_bg', x: 5040, z: -0.28, scale: 0.82 },
+      { zone: 'garage', kind: 'shelving_unit_bg', x: 5340, z: -0.30, scale: 0.81 },
+      { zone: 'garage', kind: 'ladder_bg', x: 5680, z: -0.25, scale: 0.84 },
+      { zone: 'garage', kind: 'fridge_bg', x: 5980, z: -0.27, scale: 0.83 },
+
+      // --- FOREGROUND Z > 0 FRAMING PROPS (Scroll faster in front of camera) ---
+      { zone: 'house', kind: 'fg_curtain', x: 40, z: 0.22, scale: 1.0 },
+      { zone: 'house', kind: 'fg_plant_leaf', x: 1320, z: 0.20, scale: 1.0 },
+      { zone: 'yard', kind: 'fg_grass_tuft', x: 2420, z: 0.24, scale: 1.0 },
+      { zone: 'yard', kind: 'fg_grass_tuft', x: 3340, z: 0.24, scale: 1.0 },
+      { zone: 'yard', kind: 'fg_tree_bough', x: 3960, z: 0.22, scale: 1.0 },
+      { zone: 'garage', kind: 'fg_hanging_cord', x: 4680, z: 0.20, scale: 1.0 },
+      { zone: 'garage', kind: 'fg_hanging_cord', x: 5560, z: 0.20, scale: 1.0 }
+    ];
+
+    // Treats (Total = 120 possible so player can easily hit 100!)
+    function createInitialTreats() {
+      return [
+        // House treats
+        { x: 395, y: 388, value: 10, kind: 'fish', collected: false },
+        { x: 685, y: 312, value: 10, kind: 'kibble', collected: false },
+        { x: 955, y: 238, value: 20, kind: 'gold_fish', collected: false },
+        { x: 1530, y: 476, value: 10, kind: 'kibble', collected: false }, // Under coffee table!
+        { x: 1640, y: 476, value: 10, kind: 'fish', collected: false },   // Under coffee table!
+        { x: 1955, y: 362, value: 10, kind: 'kibble', collected: false },
+
+        // Yard treats
+        { x: 2400, y: 392, value: 10, kind: 'kibble', collected: false },
+        { x: 2690, y: 315, value: 10, kind: 'fish', collected: false },
+        { x: 2975, y: 240, value: 20, kind: 'gold_fish', collected: false },
+        { x: 3555, y: 476, value: 10, kind: 'kibble', collected: false }, // Under patio bench!
+        { x: 3675, y: 476, value: 10, kind: 'fish', collected: false },   // Under patio bench!
+        { x: 4210, y: 302, value: 10, kind: 'fish', collected: false },
+
+        // Garage treats
+        { x: 4620, y: 382, value: 10, kind: 'kibble', collected: false },
+        { x: 4910, y: 302, value: 20, kind: 'gold_fish', collected: false },
+        { x: 5465, y: 476, value: 10, kind: 'kibble', collected: false }, // Under garage shelf!
+        { x: 5585, y: 476, value: 10, kind: 'fish', collected: false },   // Under garage shelf!
+        { x: 5905, y: 356, value: 10, kind: 'fish', collected: false }
+      ];
+    }
+
+    // Fritz & Food Station Goal at the end of the Garage
+    const foodStation = {
+      bowlX: 6120,
+      bowlY: GROUND_Y - 18,
+      fritzX: 6220,
+      fritzY: GROUND_Y,
+      reached: false
+    };
+
+    // ==========================================================================
+    // 3. GAME STATE & LUKE THE TABBY CAT ENTITY
+    // ==========================================================================
+    const keys = {};
+    const particles = [];
+    const floatingTexts = [];
+
+    const game = {
+      started: false,
+      won: false,
+      cameraX: 0,
+      time: 0,
+      treats: createInitialTreats(),
+      treatCount: 0,
+      bellyRubCount: 0,
+      totalRubsGiven: 0,
+      totalScratches: 0,
+      autoRolledAt100: false
+    };
+
+    const luke = {
+      x: 85,
+      y: GROUND_Y,
+      vx: 0,
+      vy: 0,
+      facing: 1, // 1 = right, -1 = left
+      onGround: true,
+      coyoteTimer: 0,
+      state: 'idle', // 'idle' | 'walk' | 'jump' | 'fall' | 'crouch' | 'crawl' | 'roll' | 'groom' | 'scratch' | 'eat' | 'victory'
+      stateTimer: 0,
+      walkCycle: 0,
+      tailPhase: 0,
+      blinkTimer: 2.5,
+      isBlinking: false,
+      squashX: 1,
+      squashY: 1,
+      invulnTimer: 0,
+      rubWiggle: 0
+    };
+
+    function getLukeHitbox() {
+      const isLow = (luke.state === 'crouch' || luke.state === 'crawl' || luke.state === 'roll');
+      const w = isLow ? 78 : 64;
+      const h = isLow ? 36 : 64;
+      return {
+        x: luke.x - w / 2,
+        y: luke.y - h,
+        w,
+        h
+      };
+    }
+
+    // Check if standing up would collide with a low table overhead
+    function canStandUp() {
+      const testBox = { x: luke.x - 30, y: luke.y - 64, w: 60, h: 64 };
+      for (const p of platforms) {
+        if (rectsOverlap(testBox, p)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function rectsOverlap(a, b) {
+      return (
+        a.x < b.x + b.w &&
+        a.x + a.w > b.x &&
+        a.y < b.y + b.h &&
+        a.y + a.h > b.y
+      );
+    }
+
+    function spawnParticles(x, y, color, count = 8, kind = 'spark') {
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.5;
+        const speed = 40 + Math.random() * 110;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - (kind === 'heart' ? 70 : 40),
+          life: 0.65 + Math.random() * 0.35,
+          maxLife: 1.0,
+          color,
+          size: kind === 'heart' ? 9 : 4 + Math.random() * 3,
+          kind
+        });
+      }
+    }
+
+    function spawnFloatingText(x, y, text, color = '#fbbf24') {
+      floatingTexts.push({
+        x,
+        y,
+        text,
+        color,
+        life: 1.15
+      });
+    }
+
+    // ==========================================================================
+    // 4. PLAYER ACTIONS (EAT, ROLL OVER, GROOM, SCRATCH, BELLY RUB)
+    // ==========================================================================
+    function triggerEat() {
+      if (!game.started || game.won) return;
+      let ateSomething = false;
+
+      // Eat any treat within generous proximity
+      for (const t of game.treats) {
+        if (!t.collected) {
+          const dist = Math.hypot(luke.x - t.x, (luke.y - 28) - t.y);
+          if (dist < 75) {
+            collectTreat(t);
+            ateSomething = true;
+          }
+        }
+      }
+
+      if (!ateSomething) {
+        // Cute little nibble animation even if no treat is right next to Luke
+        luke.state = 'eat';
+        luke.stateTimer = 0.35;
+        sfx.playEat();
+        spawnFloatingText(luke.x, luke.y - 72, 'Nom nom!', '#fcd34d');
+      }
+    }
+
+    function collectTreat(t) {
+      t.collected = true;
+      sfx.playEat();
+      const prevCount = game.treatCount;
+      game.treatCount = Math.min(100, game.treatCount + t.value);
+      updateHUD();
+
+      spawnParticles(t.x, t.y, t.kind === 'gold_fish' ? '#fbbf24' : '#fb923c', 10, 'spark');
+      spawnFloatingText(t.x, t.y - 16, `+${t.value} Treats!`, '#fef08a');
+
+      // When Treat Counter reaches 100, Luke automatically rolls over for belly rubs!
+      if (prevCount < 100 && game.treatCount >= 100 && !game.autoRolledAt100) {
+        game.autoRolledAt100 = true;
+        setTimeout(() => {
+          if (!game.won) {
+            triggerRollOver(true);
+          }
+        }, 250);
+      }
+    }
+
+    function triggerRollOver(fromMaxTreats = false) {
+      if (!game.started || game.won) return;
+      if (!luke.onGround) return;
+
+      luke.state = 'roll';
+      luke.vx = 0;
+      luke.rubWiggle = 1.0;
+      sfx.playRollOver();
+      spawnParticles(luke.x, luke.y - 25, '#fb7185', 10, 'heart');
+      spawnFloatingText(
+        luke.x,
+        luke.y - 68,
+        fromMaxTreats ? '100 Treats! Belly Rub Time!' : 'Roll Over! Click Belly!',
+        '#fda4af'
+      );
+      updateHUD();
+    }
+
+    function giveBellyRub() {
+      if (!game.started || game.won) return;
+      if (luke.state !== 'roll') return;
+
+      sfx.unlock();
+      luke.rubWiggle = 1.0;
+      game.totalRubsGiven += 1;
+      game.bellyRubCount = Math.min(10, game.bellyRubCount + 1);
+      sfx.playBellyRub(game.bellyRubCount);
+
+      spawnParticles(luke.x + (Math.random() - 0.5) * 30, luke.y - 22, '#f43f5e', 6, 'heart');
+      spawnFloatingText(luke.x, luke.y - 58, `Purr~ (${game.bellyRubCount}/10)`, '#fecdd3');
+      updateHUD();
+
+      // Once belly rubs reach 10, Luke automatically grooms himself!
+      if (game.bellyRubCount >= 10) {
+        setTimeout(() => {
+          if (!game.won && luke.state === 'roll') {
+            game.bellyRubCount = 0;
+            updateHUD();
+            triggerGroom(true);
+          }
+        }, 350);
+      }
+    }
+
+    function triggerGroom(fromBellyRubs = false) {
+      if (!game.started || game.won) return;
+      if (!luke.onGround) return;
+      if (!canStandUp()) return;
+
+      luke.state = 'groom';
+      luke.vx = 0;
+      luke.stateTimer = 2.4; // Timed groom sequence (can also interrupt by walking/jumping)
+      sfx.playGroom();
+      spawnParticles(luke.x, luke.y - 45, '#7dd3fc', 8, 'spark');
+      spawnFloatingText(
+        luke.x,
+        luke.y - 76,
+        fromBellyRubs ? '10 Rubs! Grooming Time ✨' : 'Lick, lick... ✨',
+        '#bae6fd'
+      );
+      updateHUD();
+    }
+
+    function triggerScratch() {
+      if (!game.started || game.won) return;
+      if (!luke.onGround) return;
+
+      // Check if near any scratching post
+      let nearPost = null;
+      for (const post of scratchingPosts) {
+        const postCenter = post.x + post.w / 2;
+        if (Math.abs(luke.x - postCenter) < 68) {
+          nearPost = post;
+          break;
+        }
+      }
+
+      if (nearPost) {
+        luke.facing = (nearPost.x + nearPost.w / 2 >= luke.x) ? 1 : -1;
+        luke.state = 'scratch';
+        luke.vx = 0;
+        luke.stateTimer = 0.65;
+        nearPost.scratches += 1;
+        game.totalScratches += 1;
+
+        sfx.playScratch();
+        spawnParticles(nearPost.x + nearPost.w / 2, luke.y - 55, '#fde68a', 9, 'spark');
+        spawnFloatingText(nearPost.x + nearPost.w / 2, luke.y - 115, 'Scritch-scratch! 🐾', '#fde047');
+
+        // Bonus +5 treats for scratching a post up to 3 times per post
+        if (nearPost.scratches <= 3 && game.treatCount < 100) {
+          const prev = game.treatCount;
+          game.treatCount = Math.min(100, game.treatCount + 5);
+          updateHUD();
+          if (prev < 100 && game.treatCount >= 100 && !game.autoRolledAt100) {
+            game.autoRolledAt100 = true;
+            setTimeout(() => triggerRollOver(true), 500);
+          }
+        }
+      } else {
+        // Cute air-paw scratch if away from a post
+        luke.state = 'scratch';
+        luke.vx = 0;
+        luke.stateTimer = 0.45;
+        sfx.playScratch();
+        spawnFloatingText(luke.x, luke.y - 74, 'Find a scratching post!', '#e7e5e4');
+      }
+    }
+
+    // ==========================================================================
+    // 5. INPUT HANDLING (KEYBOARD, MOUSE CLICK ON BELLY, TOUCH CONTROLS)
+    // ==========================================================================
+    window.addEventListener('keydown', (e) => {
+      sfx.unlock();
+      const code = e.code;
+
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(code)) {
+        e.preventDefault();
+      }
+
+      // Single-press action triggers
+      if (!keys[code]) {
+        if (code === 'Space' || code === 'ArrowUp' || code === 'KeyW') {
+          tryJump();
+        } else if (code === 'KeyE') {
+          triggerEat();
+        } else if (code === 'KeyR') {
+          triggerRollOver(false);
+        } else if (code === 'KeyG') {
+          triggerGroom(false);
+        } else if (code === 'KeyS') {
+          triggerScratch();
+        }
+      }
+
+      keys[code] = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    function tryJump() {
+      if (!game.started || game.won) return;
+      if (luke.coyoteTimer > 0 && canStandUp()) {
+        luke.vy = -560;
+        luke.onGround = false;
+        luke.coyoteTimer = 0;
+        luke.state = 'jump';
+        luke.squashX = 0.82;
+        luke.squashY = 1.22;
+        sfx.playJump();
+        spawnParticles(luke.x, luke.y, '#e7e5e4', 5, 'dust');
+        updateHUD();
+      }
+    }
+
+    // Canvas click/tap for belly rubs!
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function handleCanvasPointer(clientX, clientY) {
+      sfx.unlock();
+      if (!game.started || game.won) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const scale = canvas.height / VIRTUAL_HEIGHT;
+      const worldX = (clientX - rect.left) / scale + game.cameraX;
+      const worldY = (clientY - rect.top) / scale;
+
+      // Check if clicking near Luke while rolled over (or allow clicking Luke directly to pet him!)
+      const dist = Math.hypot(worldX - luke.x, worldY - (luke.y - 24));
+      if (luke.state === 'roll' && dist < 85) {
+        giveBellyRub();
+      } else if (dist < 65 && luke.onGround) {
+        // Clicking Luke when standing encourages rolling over or purrs
+        spawnParticles(luke.x, luke.y - 45, '#fda4af', 4, 'heart');
+        spawnFloatingText(luke.x, luke.y - 75, 'Press R to roll over!', '#fecdd3');
+      }
+    }
+
+    canvas.addEventListener('mousedown', (e) => handleCanvasPointer(e.clientX, e.clientY));
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        handleCanvasPointer(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    // Mobile Touch Control Buttons
+    document.querySelectorAll('.touch-btn').forEach((btn) => {
+      const code = btn.dataset.key;
+      const press = (e) => {
+        e.preventDefault();
+        sfx.unlock();
+        if (code === 'Space') tryJump();
+        keys[code] = true;
+      };
+      const release = (e) => {
+        e.preventDefault();
+        keys[code] = false;
+      };
+      btn.addEventListener('touchstart', press, { passive: false });
+      btn.addEventListener('touchend', release, { passive: false });
+      btn.addEventListener('mousedown', press);
+      btn.addEventListener('mouseup', release);
+      btn.addEventListener('mouseleave', release);
+    });
+
+    document.querySelectorAll('[data-action]').forEach((btn) => {
+      const action = btn.dataset.action;
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        sfx.unlock();
+        if (action === 'eat') triggerEat();
+        if (action === 'roll') triggerRollOver(false);
+        if (action === 'groom') triggerGroom(false);
+        if (action === 'scratch') triggerScratch();
+      });
+    });
+
+    // ==========================================================================
+    // 6. HUD & UI STATE SYNC
+    // ==========================================================================
+    const treatText = document.getElementById('treatText');
+    const treatBar = document.getElementById('treatBar');
+    const bellyText = document.getElementById('bellyText');
+    const bellyBar = document.getElementById('bellyBar');
+    const bellyCard = document.getElementById('bellyCard');
+    const bellyPromptBanner = document.getElementById('bellyPromptBanner');
+    const zoneIcon = document.getElementById('zoneIcon');
+    const zoneName = document.getElementById('zoneName');
+
+    function updateHUD() {
+      treatText.textContent = `${game.treatCount} / 100`;
+      treatBar.style.width = `${game.treatCount}%`;
+
+      bellyText.textContent = `${game.bellyRubCount} / 10`;
+      bellyBar.style.width = `${(game.bellyRubCount / 10) * 100}%`;
+
+      if (luke.state === 'roll') {
+        bellyCard.classList.add('ring-4', 'ring-rose-400', 'scale-105');
+        bellyPromptBanner.classList.remove('hidden');
+        bellyPromptBanner.querySelector('span:last-child').textContent =
+          `Luke rolled over! Click or tap Luke's belly for rubs! (${game.bellyRubCount}/10)`;
+      } else {
+        bellyCard.classList.remove('ring-4', 'ring-rose-400', 'scale-105');
+        bellyPromptBanner.classList.add('hidden');
+      }
+
+      // Zone indicator
+      if (luke.x < ZONE_YARD_START) {
+        zoneIcon.textContent = '🏠';
+        zoneName.textContent = 'Cozy House';
+      } else if (luke.x < ZONE_GARAGE_START) {
+        zoneIcon.textContent = '🌳';
+        zoneName.textContent = 'Sunny Backyard';
+      } else {
+        zoneIcon.textContent = '🧰';
+        zoneName.textContent = 'Garage & Food Station';
+      }
+    }
+
+    document.getElementById('soundToggle').addEventListener('click', () => {
+      sfx.unlock();
+      const muted = sfx.toggleMute();
+      document.getElementById('soundIcon').textContent = muted ? '🔇' : '🔊';
+      document.getElementById('soundLabel').textContent = muted ? 'Muted' : 'SFX On';
+    });
+
+    document.getElementById('startBtn').addEventListener('click', () => {
+      sfx.unlock();
+      document.getElementById('startModal').classList.add('hidden');
+      game.started = true;
+      sfx.playRollOver();
+    });
+
+    document.getElementById('playAgainBtn').addEventListener('click', () => {
+      sfx.unlock();
+      resetGame();
+      document.getElementById('victoryModal').classList.add('hidden');
+      game.started = true;
+    });
+
+    function resetGame() {
+      game.won = false;
+      game.cameraX = 0;
+      game.treats = createInitialTreats();
+      game.treatCount = 0;
+      game.bellyRubCount = 0;
+      game.totalRubsGiven = 0;
+      game.totalScratches = 0;
+      game.autoRolledAt100 = false;
+      scratchingPosts.forEach((p) => (p.scratches = 0));
+      foodStation.reached = false;
+
+      luke.x = 85;
+      luke.y = GROUND_Y;
+      luke.vx = 0;
+      luke.vy = 0;
+      luke.facing = 1;
+      luke.onGround = true;
+      luke.state = 'idle';
+      luke.stateTimer = 0;
+      luke.invulnTimer = 0;
+
+      particles.length = 0;
+      floatingTexts.length = 0;
+      updateHUD();
+    }
+
+    // ==========================================================================
+    // 7. PHYSICS & GAME LOOP UPDATE
+    // ==========================================================================
+    function update(dt) {
+      game.time += dt;
+
+      // Update particles & floating texts even during victory
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        if (p.kind !== 'heart') p.vy += 260 * dt;
+        p.life -= dt;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y -= 36 * dt;
+        ft.life -= dt;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+      }
+
+      // Recover squash & stretch smoothly
+      luke.squashX += (1 - luke.squashX) * Math.min(1, dt * 14);
+      luke.squashY += (1 - luke.squashY) * Math.min(1, dt * 14);
+      luke.tailPhase += dt * (Math.abs(luke.vx) > 10 ? 11 : 3.2);
+      if (luke.rubWiggle > 0) luke.rubWiggle = Math.max(0, luke.rubWiggle - dt * 2.5);
+      if (luke.invulnTimer > 0) luke.invulnTimer -= dt;
+
+      // Natural blinking
+      luke.blinkTimer -= dt;
+      if (luke.blinkTimer <= 0) {
+        if (!luke.isBlinking) {
+          luke.isBlinking = true;
+          luke.blinkTimer = 0.14;
+        } else {
+          luke.isBlinking = false;
+          luke.blinkTimer = 2.4 + Math.random() * 2.5;
+        }
+      }
+
+      if (!game.started) return;
+
+      if (game.won) {
+        luke.state = 'victory';
+        luke.vx = 0;
+        return;
+      }
+
+      const moveLeft = keys['ArrowLeft'] || keys['KeyA'];
+      const moveRight = keys['ArrowRight'] || keys['KeyD'];
+      const holdDown = keys['ArrowDown'];
+
+      // Allow directional movement to cleanly exit roll/groom/scratch states
+      if (moveLeft || moveRight) {
+        if (luke.state === 'roll' || luke.state === 'groom' || luke.state === 'scratch') {
+          luke.state = 'walk';
+          updateHUD();
+        }
+      }
+
+      // Timed action states (groom, scratch, eat)
+      if (luke.state === 'groom' || luke.state === 'scratch' || luke.state === 'eat') {
+        luke.stateTimer -= dt;
+        if (luke.state === 'groom' && Math.floor((luke.stateTimer + dt) * 3) !== Math.floor(luke.stateTimer * 3)) {
+          sfx.playGroom();
+          spawnParticles(luke.x + luke.facing * 12, luke.y - 46, '#bae6fd', 2, 'spark');
+        }
+        if (luke.stateTimer <= 0) {
+          luke.state = 'idle';
+        }
+      }
+
+      // Horizontal Movement
+      const lockedInPose = (luke.state === 'roll' || luke.state === 'groom' || luke.state === 'scratch');
+      const mustStayLow = !canStandUp();
+      const isCrouchingOrCrawling = luke.onGround && (holdDown || mustStayLow) && !lockedInPose;
+
+      if (!lockedInPose) {
+        const maxSpeed = isCrouchingOrCrawling ? 135 : 265;
+        if (moveLeft && !moveRight) {
+          luke.vx = -maxSpeed;
+          luke.facing = -1;
+        } else if (moveRight && !moveLeft) {
+          luke.vx = maxSpeed;
+          luke.facing = 1;
+        } else {
+          luke.vx *= Math.pow(0.001, dt);
+          if (Math.abs(luke.vx) < 5) luke.vx = 0;
+        }
+      } else {
+        luke.vx = 0;
+      }
+
+      // Apply Horizontal Movement + Platform Side Collision
+      const prevX = luke.x;
+      luke.x += luke.vx * dt;
+      luke.x = Math.max(40, Math.min(WORLD_WIDTH - 60, luke.x));
+
+      const hBox = getLukeHitbox();
+      for (const p of platforms) {
+        if (rectsOverlap(hBox, p)) {
+          if (prevX <= p.x) {
+            luke.x = p.x - hBox.w / 2;
+          } else if (prevX >= p.x + p.w) {
+            luke.x = p.x + p.w + hBox.w / 2;
+          }
+          luke.vx = 0;
+        }
+      }
+
+      // Gravity & Vertical Movement
+      const prevY = luke.y;
+      luke.vy += 1380 * dt;
+      luke.y += luke.vy * dt;
+
+      const wasOnGround = luke.onGround;
+      luke.onGround = false;
+
+      // Ground collision
+      if (luke.y >= GROUND_Y) {
+        luke.y = GROUND_Y;
+        if (!wasOnGround && luke.vy > 120) {
+          luke.squashX = 1.18;
+          luke.squashY = 0.84;
+          sfx.playStep(false);
+        }
+        luke.vy = 0;
+        luke.onGround = true;
+      }
+
+      // One-way / Solid Platform top & bottom collisions
+      const vBox = getLukeHitbox();
+      for (const p of platforms) {
+        if (rectsOverlap(vBox, p)) {
+          if (luke.vy >= 0 && prevY <= p.y + 8) {
+            luke.y = p.y;
+            if (!wasOnGround && luke.vy > 120) {
+              luke.squashX = 1.16;
+              luke.squashY = 0.86;
+              sfx.playStep(false);
+            }
+            luke.vy = 0;
+            luke.onGround = true;
+          } else if (luke.vy < 0 && prevY - vBox.h >= p.y + p.h - 8) {
+            luke.y = p.y + p.h + vBox.h;
+            luke.vy = 0;
+          }
+        }
+      }
+
+      if (luke.onGround) {
+        luke.coyoteTimer = 0.1;
+      } else {
+        luke.coyoteTimer = Math.max(0, luke.coyoteTimer - dt);
+      }
+
+      // Determine Locomotion Animation State
+      if (!lockedInPose && luke.state !== 'eat') {
+        if (!luke.onGround) {
+          luke.state = luke.vy < 0 ? 'jump' : 'fall';
+        } else if (isCrouchingOrCrawling) {
+          luke.state = Math.abs(luke.vx) > 12 ? 'crawl' : 'crouch';
+        } else if (Math.abs(luke.vx) > 15) {
+          luke.state = 'walk';
+        } else {
+          luke.state = 'idle';
+        }
+      }
+
+      // Walk/Crawl cycle & soft paw footsteps
+      if (luke.state === 'walk' || luke.state === 'crawl') {
+        const cycleSpeed = luke.state === 'crawl' ? 11 : 15;
+        const prevStep = Math.floor(luke.walkCycle / Math.PI);
+        luke.walkCycle += dt * cycleSpeed;
+        const currStep = Math.floor(luke.walkCycle / Math.PI);
+        if (prevStep !== currStep) {
+          sfx.playStep(luke.state === 'crawl');
+        }
+      }
+
+      // Auto-collect treats on contact
+      const activeBox = getLukeHitbox();
+      for (const t of game.treats) {
+        if (!t.collected) {
+          const treatBox = { x: t.x - 16, y: t.y - 16, w: 32, h: 32 };
+          if (rectsOverlap(activeBox, treatBox)) {
+            collectTreat(t);
+          }
+        }
+      }
+
+      // Obstacle gentle bump collision
+      if (luke.invulnTimer <= 0) {
+        for (const obs of obstacles) {
+          if (rectsOverlap(activeBox, obs)) {
+            luke.invulnTimer = 0.85;
+            luke.vy = -260;
+            luke.vx = -luke.facing * 220;
+            luke.onGround = false;
+            sfx.playBumpMeow();
+            spawnParticles(luke.x, luke.y - 30, '#f97316', 7, 'spark');
+            spawnFloatingText(luke.x, luke.y - 72, 'Mrow! Jump over!', '#fdba74');
+            break;
+          }
+        }
+      }
+
+      // Goal Check: Reaching Fritz & Food Station!
+      if (!foodStation.reached && luke.x >= foodStation.bowlX - 25) {
+        foodStation.reached = true;
+        game.won = true;
+        luke.x = foodStation.bowlX - 18;
+        luke.y = GROUND_Y;
+        luke.facing = 1;
+        luke.state = 'victory';
+        sfx.playHappyGoalMeow();
+        spawnParticles(foodStation.bowlX, foodStation.bowlY - 25, '#fbbf24', 18, 'heart');
+        spawnFloatingText(luke.x, luke.y - 88, 'MEOW~! ♥', '#fde047');
+
+        document.getElementById('finalTreats').textContent = `${game.treatCount} / 100`;
+        document.getElementById('finalRubs').textContent = `${game.totalRubsGiven}`;
+        document.getElementById('finalScratches').textContent = `${game.totalScratches}`;
+        setTimeout(() => {
+          document.getElementById('victoryModal').classList.remove('hidden');
+        }, 1250);
+      }
+
+      updateHUD();
+
+      // Smooth Camera Follow
+      const scale = canvas.height / VIRTUAL_HEIGHT;
+      const viewWidth = canvas.width / scale;
+      const targetCamX = Math.max(0, Math.min(WORLD_WIDTH - viewWidth, luke.x - viewWidth * 0.36));
+      game.cameraX += (targetCamX - game.cameraX) * Math.min(1, dt * 7.5);
+    }
+
+    // ==========================================================================
+    // 8. PROCEDURAL RENDERING (WORLD, LUKE THE TABBY CAT, FRITZ)
+    // ==========================================================================
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function drawBackgroundAndZones(viewWidth) {
+      // Elevated perspective horizon line where walls/fences meet the deeper floor/lawn (Z < 0)
+      const DEEP_FLOOR_Y = GROUND_Y - 46;
+
+      // Zone 1: Cozy House (0 - ZONE_YARD_START)
+      if (game.cameraX < ZONE_YARD_START + 50) {
+        const hx = Math.max(0, game.cameraX);
+        const hw = Math.min(ZONE_YARD_START, game.cameraX + viewWidth) - hx;
+        if (hw > 0) {
+          const wallGrad = ctx.createLinearGradient(0, 0, 0, DEEP_FLOOR_Y);
+          wallGrad.addColorStop(0, '#f5e6d3');
+          wallGrad.addColorStop(1, '#e4cbb0');
+          ctx.fillStyle = wallGrad;
+          ctx.fillRect(hx, 0, hw, DEEP_FLOOR_Y);
+
+          // Subtle wallpaper vertical stripes
+          ctx.fillStyle = 'rgba(180, 140, 100, 0.08)';
+          for (let wx = Math.floor(hx / 60) * 60; wx < hx + hw; wx += 60) {
+            ctx.fillRect(wx, 0, 18, DEEP_FLOOR_Y);
+          }
+
+          // Recessed back wall baseboard (higher up on Y to show Z-depth into the room!)
+          ctx.fillStyle = '#a47e5c';
+          ctx.fillRect(hx, DEEP_FLOOR_Y - 14, hw, 14);
+
+          // Decorative Framed Cat Art & Window
+          drawHouseDecor();
+        }
+      }
+
+      // Zone 2: Sunny Backyard (ZONE_YARD_START - ZONE_GARAGE_START)
+      if (game.cameraX + viewWidth > ZONE_YARD_START - 20 && game.cameraX < ZONE_GARAGE_START + 20) {
+        const yx = Math.max(ZONE_YARD_START, game.cameraX);
+        const yw = Math.min(ZONE_GARAGE_START, game.cameraX + viewWidth) - yx;
+        if (yw > 0) {
+          const skyGrad = ctx.createLinearGradient(0, 0, 0, DEEP_FLOOR_Y);
+          skyGrad.addColorStop(0, '#7dd3fc');
+          skyGrad.addColorStop(0.65, '#bae6fd');
+          skyGrad.addColorStop(1, '#e0f2fe');
+          ctx.fillStyle = skyGrad;
+          ctx.fillRect(yx, 0, yw, DEEP_FLOOR_Y);
+
+          // Distant rolling hills for extra depth
+          ctx.fillStyle = '#86efac';
+          ctx.beginPath();
+          ctx.moveTo(yx, DEEP_FLOOR_Y);
+          for (let hx = ZONE_YARD_START; hx <= ZONE_GARAGE_START; hx += 260) {
+            ctx.quadraticCurveTo(hx + 130, DEEP_FLOOR_Y - 48, hx + 260, DEEP_FLOOR_Y);
+          }
+          ctx.fill();
+
+          // Sun & Fluffy Clouds
+          ctx.fillStyle = '#fde047';
+          ctx.beginPath();
+          ctx.arc(ZONE_YARD_START + 280 + (game.cameraX - ZONE_YARD_START) * 0.25, 92, 38, 0, Math.PI * 2);
+          ctx.fill();
+
+          drawClouds(yx, yw);
+
+          // Wooden Backyard Fence seated along the deeper Z-plane horizon (DEEP_FLOOR_Y)
+          ctx.fillStyle = '#9a5b13';
+          ctx.fillRect(yx, DEEP_FLOOR_Y - 108, yw, 11);
+          ctx.fillRect(yx, DEEP_FLOOR_Y - 52, yw, 11);
+          for (let fx = ZONE_YARD_START + 10; fx < ZONE_GARAGE_START - 10; fx += 34) {
+            ctx.fillStyle = fx % 68 === 0 ? '#c28117' : '#a96812';
+            ctx.beginPath();
+            ctx.roundRect(fx, DEEP_FLOOR_Y - 130, 26, 130, [6, 6, 0, 0]);
+            ctx.fill();
+          }
+        }
+      }
+
+      // Zone 3: Garage & Food Station (ZONE_GARAGE_START - WORLD_WIDTH)
+      if (game.cameraX + viewWidth > ZONE_GARAGE_START - 20) {
+        const gx = Math.max(ZONE_GARAGE_START, game.cameraX);
+        const gw = Math.min(WORLD_WIDTH, game.cameraX + viewWidth) - gx;
+        if (gw > 0) {
+          const gGrad = ctx.createLinearGradient(0, 0, 0, DEEP_FLOOR_Y);
+          gGrad.addColorStop(0, '#cbd5e1');
+          gGrad.addColorStop(1, '#94a3b8');
+          ctx.fillStyle = gGrad;
+          ctx.fillRect(gx, 0, gw, DEEP_FLOOR_Y);
+
+          // Garage wall trim at DEEP_FLOOR_Y
+          ctx.fillStyle = '#64748b';
+          ctx.fillRect(gx, DEEP_FLOOR_Y - 12, gw, 12);
+
+          // Pegboard & Garage Wall Panels
+          ctx.strokeStyle = 'rgba(51, 65, 85, 0.15)';
+          ctx.lineWidth = 2;
+          for (let px = ZONE_GARAGE_START + 60; px < WORLD_WIDTH; px += 200) {
+            ctx.strokeRect(px, 58, 145, 290);
+          }
+
+          // Pegboard tool rack
+          ctx.fillStyle = '#b45309';
+          ctx.fillRect(4780, 125, 230, 105);
+          ctx.strokeStyle = '#78350f';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(4780, 125, 230, 105);
+
+          // Welcome Banner near Fritz
+          ctx.fillStyle = '#fef3c7';
+          ctx.strokeStyle = '#d97706';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.roundRect(6035, 145, 250, 56, 14);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = '#92400e';
+          ctx.font = '800 18px Fredoka, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText("LUKE'S FOOD STATION", 6160, 179);
+        }
+      }
+
+      // Perspective Floor Strip connecting Z < 0 background wall to Luke's Z = 0 path
+      // House Hardwood Floor (with perspective planks)
+      const houseFloorGrad = ctx.createLinearGradient(0, DEEP_FLOOR_Y, 0, VIRTUAL_HEIGHT);
+      houseFloorGrad.addColorStop(0, '#784c3f');
+      houseFloorGrad.addColorStop(0.28, '#8d5b4c');
+      houseFloorGrad.addColorStop(1, '#6f4539');
+      ctx.fillStyle = houseFloorGrad;
+      ctx.fillRect(0, DEEP_FLOOR_Y, ZONE_YARD_START, VIRTUAL_HEIGHT - DEEP_FLOOR_Y);
+
+      ctx.strokeStyle = 'rgba(62, 34, 26, 0.35)';
+      ctx.lineWidth = 2;
+      for (let fx = 0; fx < ZONE_YARD_START; fx += 90) {
+        ctx.beginPath();
+        ctx.moveTo(fx + 14, DEEP_FLOOR_Y);
+        ctx.lineTo(fx, GROUND_Y);
+        ctx.lineTo(fx, VIRTUAL_HEIGHT);
+        ctx.stroke();
+      }
+      // Subtle Z=0 path highlight line
+      ctx.fillStyle = 'rgba(255, 237, 213, 0.14)';
+      ctx.fillRect(0, GROUND_Y - 2, ZONE_YARD_START, 4);
+
+      // Cozy Living Room Rug on Z=0 lane
+      ctx.fillStyle = '#be123c';
+      ctx.beginPath();
+      ctx.roundRect(290, GROUND_Y + 2, 490, 12, 4);
+      ctx.fill();
+
+      // Yard Lush Grass (recessed lawn strip + Z=0 main grass lane)
+      const yardGrassGrad = ctx.createLinearGradient(0, DEEP_FLOOR_Y, 0, VIRTUAL_HEIGHT);
+      yardGrassGrad.addColorStop(0, '#3f6212');
+      yardGrassGrad.addColorStop(0.26, '#65a30d');
+      yardGrassGrad.addColorStop(0.34, '#4d7c0f');
+      yardGrassGrad.addColorStop(1, '#365314');
+      ctx.fillStyle = yardGrassGrad;
+      ctx.fillRect(ZONE_YARD_START, DEEP_FLOOR_Y, ZONE_GARAGE_START - ZONE_YARD_START, VIRTUAL_HEIGHT - DEEP_FLOOR_Y);
+
+      // Crisp Z=0 grass blade edge so Luke's lane stands out clearly
+      ctx.fillStyle = '#84cc16';
+      ctx.fillRect(ZONE_YARD_START, GROUND_Y - 2, ZONE_GARAGE_START - ZONE_YARD_START, 5);
+
+      // Garage Concrete Floor (recessed back bay + Z=0 main lane)
+      const garageFloorGrad = ctx.createLinearGradient(0, DEEP_FLOOR_Y, 0, VIRTUAL_HEIGHT);
+      garageFloorGrad.addColorStop(0, '#475569');
+      garageFloorGrad.addColorStop(0.28, '#64748b');
+      garageFloorGrad.addColorStop(1, '#475569');
+      ctx.fillStyle = garageFloorGrad;
+      ctx.fillRect(ZONE_GARAGE_START, DEEP_FLOOR_Y, WORLD_WIDTH - ZONE_GARAGE_START, VIRTUAL_HEIGHT - DEEP_FLOOR_Y);
+
+      // Concrete expansion joint lines showing floor depth
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.35)';
+      ctx.lineWidth = 2;
+      for (let gx = ZONE_GARAGE_START; gx < WORLD_WIDTH; gx += 140) {
+        ctx.beginPath();
+        ctx.moveTo(gx + 18, DEEP_FLOOR_Y);
+        ctx.lineTo(gx, GROUND_Y);
+        ctx.lineTo(gx, VIRTUAL_HEIGHT);
+        ctx.stroke();
+      }
+      ctx.fillStyle = 'rgba(226, 232, 240, 0.25)';
+      ctx.fillRect(ZONE_GARAGE_START, GROUND_Y - 2, WORLD_WIDTH - ZONE_GARAGE_START, 4);
+
+      // Zone Dividers (Archways spanning full floor depth)
+      [ZONE_YARD_START, ZONE_GARAGE_START].forEach((doorX) => {
+        ctx.fillStyle = '#78350f';
+        ctx.fillRect(doorX - 14, GROUND_Y - 235, 28, 235);
+        ctx.fillStyle = '#92400e';
+        ctx.fillRect(doorX - 20, GROUND_Y - 247, 40, 16);
+      });
+    }
+
+    function drawHouseDecor() {
+      // Framed picture 1
+      ctx.fillStyle = '#78350f';
+      ctx.fillRect(140, 130, 84, 68);
+      ctx.fillStyle = '#fef3c7';
+      ctx.fillRect(147, 137, 70, 54);
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(182, 164, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Sunny Living Room Window
+      ctx.fillStyle = '#bae6fd';
+      ctx.fillRect(1240, 110, 150, 130);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(1240, 110, 150, 130);
+      ctx.beginPath();
+      ctx.moveTo(1315, 110);
+      ctx.lineTo(1315, 240);
+      ctx.moveTo(1240, 175);
+      ctx.lineTo(1390, 175);
+      ctx.stroke();
+    }
+
+    function drawClouds(yx, yw) {
+      ctx.fillStyle = 'rgba(255,255,255,0.88)';
+      const cloudPositions = [2350, 2780, 3260, 3780, 4150];
+      for (const cx of cloudPositions) {
+        if (cx + 120 >= yx && cx - 60 <= yx + yw) {
+          ctx.beginPath();
+          ctx.arc(cx, 105, 24, 0, Math.PI * 2);
+          ctx.arc(cx + 26, 97, 30, 0, Math.PI * 2);
+          ctx.arc(cx + 56, 105, 22, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    /**
+     * Render Z < 0 Background / Midground Props (Non-interactive depth layer)
+     * Visually communicates depth via:
+     * 1) Parallax horizontal shift (moves slower than Z=0 gameplay objects)
+     * 2) Elevated floor contact Y (seated higher up on the floor strip, behind Luke)
+     * 3) Reduced scale (0.78x - 0.86x) + soft contact shadow + atmospheric haze tint
+     */
+    function drawBackgroundDepthProps(viewWidth) {
+      for (const prop of depthProps) {
+        if (prop.z >= 0) continue; // Foreground rendered after Luke
+
+        // Parallax offset relative to camera center
+        const camCenter = game.cameraX + viewWidth * 0.5;
+        const parallaxX = prop.x + (prop.x - camCenter) * prop.z;
+
+        // Culling outside view
+        if (parallaxX < game.cameraX - 220 || parallaxX > game.cameraX + viewWidth + 220) continue;
+
+        // Deeper Z objects sit higher up on the floor strip (between DEEP_FLOOR_Y and GROUND_Y)
+        const baseY = GROUND_Y + prop.z * 115; // e.g., z = -0.30 -> 34.5px higher on floor plane!
+
+        ctx.save();
+        ctx.translate(parallaxX, baseY);
+        ctx.scale(prop.scale, prop.scale);
+
+        // Soft recessed floor contact shadow
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.16)';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 52, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw specific background/midground prop
+        drawSingleDepthProp(prop.kind);
+
+        // Subtle atmospheric depth veil so it clearly reads as recessed in Z-space
+        ctx.globalCompositeOperation = 'source-atop';
+        if (prop.zone === 'house') {
+          ctx.fillStyle = 'rgba(245, 230, 211, 0.24)';
+        } else if (prop.zone === 'yard') {
+          ctx.fillStyle = 'rgba(186, 230, 253, 0.24)';
+        } else {
+          ctx.fillStyle = 'rgba(203, 213, 225, 0.26)';
+        }
+        ctx.fillRect(-140, -280, 280, 290);
+
+        ctx.restore();
+      }
+    }
+
+    function drawSingleDepthProp(kind) {
+      switch (kind) {
+        case 'floor_lamp': {
+          ctx.fillStyle = '#78350f';
+          ctx.beginPath();
+          ctx.ellipse(0, -2, 22, 6, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillRect(-3, -155, 6, 153);
+          ctx.fillStyle = '#fde68a';
+          ctx.beginPath();
+          ctx.moveTo(-26, -150);
+          ctx.lineTo(26, -150);
+          ctx.lineTo(18, -195);
+          ctx.lineTo(-18, -195);
+          ctx.closePath();
+          ctx.fill();
+          break;
+        }
+        case 'bookcase_bg': {
+          ctx.fillStyle = '#92400e';
+          ctx.beginPath();
+          ctx.roundRect(-45, -185, 90, 185, 6);
+          ctx.fill();
+          ctx.fillStyle = '#78350f';
+          for (let sy = -150; sy <= -40; sy += 38) {
+            ctx.fillRect(-39, sy, 78, 30);
+          }
+          // Colorful book spines
+          const colors = ['#dc2626', '#2563eb', '#16a34a', '#d97706', '#7c3aed'];
+          for (let row = 0; row < 3; row++) {
+            const by = -122 + row * 38;
+            for (let b = 0; b < 5; b++) {
+              ctx.fillStyle = colors[(row + b) % colors.length];
+              ctx.fillRect(-34 + b * 14, by - 22, 10, 22);
+            }
+          }
+          break;
+        }
+        case 'armchair_bg': {
+          ctx.fillStyle = '#b45309';
+          ctx.beginPath();
+          ctx.roundRect(-48, -92, 96, 84, 16);
+          ctx.fill();
+          ctx.fillStyle = '#d97706';
+          ctx.beginPath();
+          ctx.roundRect(-36, -54, 72, 34, 10);
+          ctx.fill();
+          ctx.fillStyle = '#5c2d0c';
+          ctx.fillRect(-38, -10, 10, 10);
+          ctx.fillRect(28, -10, 10, 10);
+          break;
+        }
+        case 'houseplant_bg': {
+          ctx.fillStyle = '#c2410c';
+          ctx.beginPath();
+          ctx.moveTo(-18, -36);
+          ctx.lineTo(18, -36);
+          ctx.lineTo(13, 0);
+          ctx.lineTo(-13, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = '#15803d';
+          [[-14, -56, -0.4], [0, -68, 0], [14, -56, 0.4]].forEach(([lx, ly, rot]) => {
+            ctx.save();
+            ctx.translate(lx, ly);
+            ctx.rotate(rot);
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 10, 24, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+          });
+          break;
+        }
+        case 'sideboard_bg': {
+          ctx.fillStyle = '#854d0e';
+          ctx.beginPath();
+          ctx.roundRect(-58, -76, 116, 64, 6);
+          ctx.fill();
+          ctx.fillRect(-50, -12, 8, 12);
+          ctx.fillRect(42, -12, 8, 12);
+          // Lamp & vase on top
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.ellipse(22, -92, 9, 16, 0, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        case 'coat_rack_bg': {
+          ctx.fillStyle = '#78350f';
+          ctx.fillRect(-4, -175, 8, 175);
+          ctx.beginPath();
+          ctx.moveTo(-22, 0);
+          ctx.lineTo(0, -18);
+          ctx.lineTo(22, 0);
+          ctx.stroke();
+          ctx.fillStyle = '#0284c7';
+          ctx.beginPath();
+          ctx.ellipse(-10, -125, 12, 34, 0.15, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        case 'oak_tree_bg': {
+          ctx.fillStyle = '#78350f';
+          ctx.fillRect(-16, -150, 32, 150);
+          ctx.fillStyle = '#16a34a';
+          ctx.beginPath();
+          ctx.arc(0, -185, 64, 0, Math.PI * 2);
+          ctx.arc(-44, -155, 46, 0, Math.PI * 2);
+          ctx.arc(46, -155, 46, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        case 'birdbath_bg': {
+          ctx.fillStyle = '#cbd5e1';
+          ctx.fillRect(-8, -68, 16, 68);
+          ctx.beginPath();
+          ctx.ellipse(0, -2, 24, 7, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.ellipse(0, -72, 34, 10, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.ellipse(0, -74, 26, 5, 0, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        case 'garden_shed_bg': {
+          ctx.fillStyle = '#b91c1c';
+          ctx.fillRect(-75, -145, 150, 145);
+          ctx.fillStyle = '#7f1d1d';
+          ctx.beginPath();
+          ctx.moveTo(-88, -145);
+          ctx.lineTo(0, -205);
+          ctx.lineTo(88, -145);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = '#fef3c7';
+          ctx.fillRect(-22, -105, 44, 105);
+          break;
+        }
+        case 'hedge_bush_bg': {
+          ctx.fillStyle = '#15803d';
+          ctx.beginPath();
+          ctx.arc(-28, -26, 28, 0, Math.PI * 2);
+          ctx.arc(0, -34, 34, 0, Math.PI * 2);
+          ctx.arc(30, -26, 28, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        case 'wheelbarrow_bg': {
+          ctx.fillStyle = '#15803d';
+          ctx.beginPath();
+          ctx.moveTo(-36, -54);
+          ctx.lineTo(26, -54);
+          ctx.lineTo(14, -22);
+          ctx.lineTo(-26, -22);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = '#1e293b';
+          ctx.beginPath();
+          ctx.arc(28, -14, 14, 0, Math.PI * 2);
+          ctx.fill();
+          break;
+        }
+        case 'shelving_unit_bg': {
+          ctx.strokeStyle = '#475569';
+          ctx.lineWidth = 5;
+          ctx.strokeRect(-48, -180, 96, 180);
+          for (let sy = -135; sy <= -45; sy += 45) {
+            ctx.beginPath();
+            ctx.moveTo(-48, sy);
+            ctx.lineTo(48, sy);
+            ctx.stroke();
+            ctx.fillStyle = '#0284c7';
+            ctx.fillRect(-34, sy - 24, 22, 24);
+            ctx.fillStyle = '#d97706';
+            ctx.fillRect(6, sy - 20, 26, 20);
+          }
+          break;
+        }
+        case 'stacked_tires_bg': {
+          ctx.fillStyle = '#1e293b';
+          for (let ty = -18; ty >= -72; ty -= 18) {
+            ctx.beginPath();
+            ctx.roundRect(-32, ty, 64, 16, 8);
+            ctx.fill();
+          }
+          break;
+        }
+        case 'bike_rack_bg': {
+          ctx.strokeStyle = '#dc2626';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(-32, -26, 24, 0, Math.PI * 2);
+          ctx.arc(32, -26, 24, 0, Math.PI * 2);
+          ctx.moveTo(-32, -26);
+          ctx.lineTo(0, -54);
+          ctx.lineTo(32, -26);
+          ctx.stroke();
+          break;
+        }
+        case 'ladder_bg': {
+          ctx.strokeStyle = '#b45309';
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.moveTo(-24, 0);
+          ctx.lineTo(-10, -175);
+          ctx.moveTo(24, 0);
+          ctx.lineTo(10, -175);
+          for (let ly = -25; ly >= -155; ly -= 26) {
+            ctx.moveTo(-20, ly);
+            ctx.lineTo(20, ly);
+          }
+          ctx.stroke();
+          break;
+        }
+        case 'fridge_bg': {
+          ctx.fillStyle = '#e2e8f0';
+          ctx.beginPath();
+          ctx.roundRect(-36, -165, 72, 165, 8);
+          ctx.fill();
+          ctx.strokeStyle = '#94a3b8';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-36, -108);
+          ctx.lineTo(36, -108);
+          ctx.stroke();
+          break;
+        }
+      }
+    }
+
+    /**
+     * Render Z > 0 Foreground Framing Elements (Scroll faster in front of Luke's path)
+     */
+    function drawForegroundDepthProps(viewWidth) {
+      for (const prop of depthProps) {
+        if (prop.z <= 0) continue;
+
+        const camCenter = game.cameraX + viewWidth * 0.5;
+        const parallaxX = prop.x + (prop.x - camCenter) * prop.z;
+        if (parallaxX < game.cameraX - 180 || parallaxX > game.cameraX + viewWidth + 180) continue;
+
+        ctx.save();
+        ctx.translate(parallaxX, GROUND_Y);
+
+        if (prop.kind === 'fg_curtain') {
+          ctx.fillStyle = 'rgba(136, 19, 55, 0.32)';
+          ctx.beginPath();
+          ctx.moveTo(-40, -GROUND_Y);
+          ctx.quadraticCurveTo(30, -GROUND_Y * 0.5, -10, 115);
+          ctx.lineTo(-60, 115);
+          ctx.lineTo(-60, -GROUND_Y);
+          ctx.closePath();
+          ctx.fill();
+        } else if (prop.kind === 'fg_plant_leaf') {
+          ctx.fillStyle = 'rgba(20, 83, 45, 0.36)';
+          ctx.beginPath();
+          ctx.ellipse(0, 75, 45, 18, -0.4, 0, Math.PI * 2);
+          ctx.ellipse(30, 85, 40, 16, 0.3, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (prop.kind === 'fg_grass_tuft') {
+          ctx.fillStyle = 'rgba(54, 83, 20, 0.45)';
+          for (let b = -24; b <= 24; b += 12) {
+            ctx.beginPath();
+            ctx.moveTo(b - 5, 115);
+            ctx.lineTo(b + b * 0.3, 42);
+            ctx.lineTo(b + 5, 115);
+            ctx.closePath();
+            ctx.fill();
+          }
+        } else if (prop.kind === 'fg_tree_bough') {
+          ctx.fillStyle = 'rgba(20, 83, 45, 0.34)';
+          ctx.beginPath();
+          ctx.arc(0, -GROUND_Y + 25, 65, 0, Math.PI * 2);
+          ctx.arc(52, -GROUND_Y + 12, 50, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (prop.kind === 'fg_hanging_cord') {
+          ctx.strokeStyle = 'rgba(30, 41, 59, 0.38)';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(0, -GROUND_Y);
+          ctx.lineTo(0, -GROUND_Y + 115);
+          ctx.stroke();
+          ctx.fillStyle = 'rgba(253, 224, 71, 0.42)';
+          ctx.beginPath();
+          ctx.arc(0, -GROUND_Y + 124, 11, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    /**
+     * Render Z = 0 Interactive Platforms, Crawl Tunnels, Scratching Posts, Obstacles & Treats
+     */
+    function drawPlatforms() {
+      for (const p of platforms) {
+        ctx.save();
+
+        // Draw support legs for crawl-under furniture (Coffee Table, Patio Bench, Garage Storage Rack)
+        if (p.legs) {
+          ctx.fillStyle =
+            p.style === 'metal_low'
+              ? '#334155'
+              : p.style === 'patio_low'
+              ? '#78350f'
+              : '#5c2d0c';
+          ctx.fillRect(p.x + 12, p.y + p.h, 12, GROUND_Y - (p.y + p.h));
+          ctx.fillRect(p.x + p.w - 24, p.y + p.h, 12, GROUND_Y - (p.y + p.h));
+
+          // Crawl hint badge
+          if (p.crawlHint) {
+            ctx.fillStyle = 'rgba(28, 25, 23, 0.72)';
+            ctx.beginPath();
+            ctx.roundRect(p.x + p.w / 2 - 48, p.y - 24, 96, 18, 9);
+            ctx.fill();
+            ctx.fillStyle = '#fde68a';
+            ctx.font = '800 10px Nunito, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('↓ CRAWL UNDER', p.x + p.w / 2, p.y - 12);
+          }
+        }
+
+        // Platform surface styling by zone theme
+        if (p.style === 'sofa') {
+          ctx.fillStyle = '#9f1239';
+          ctx.beginPath();
+          ctx.roundRect(p.x, p.y, p.w, p.h, 8);
+          ctx.fill();
+          ctx.fillStyle = '#be123c';
+          ctx.beginPath();
+          ctx.roundRect(p.x + 6, p.y + 3, p.w - 12, p.h - 8, 5);
+          ctx.fill();
+        } else if (p.style === 'shelf' || p.style === 'table_low' || p.style === 'counter') {
+          ctx.fillStyle = '#92400e';
+          ctx.beginPath();
+          ctx.roundRect(p.x, p.y, p.w, p.h, 6);
+          ctx.fill();
+          ctx.fillStyle = '#b45309';
+          ctx.fillRect(p.x + 4, p.y + 3, p.w - 8, 5);
+        } else if (p.style === 'planter' || p.style === 'patio_low' || p.style === 'fence_ledge') {
+          ctx.fillStyle = '#a16207';
+          ctx.beginPath();
+          ctx.roundRect(p.x, p.y, p.w, p.h, 6);
+          ctx.fill();
+          if (p.style === 'planter') {
+            ctx.fillStyle = '#15803d';
+            ctx.fillRect(p.x + 8, p.y - 4, p.w - 16, 5);
+          }
+        } else if (p.style === 'branch') {
+          ctx.fillStyle = '#713f12';
+          ctx.beginPath();
+          ctx.roundRect(p.x, p.y, p.w, p.h, 10);
+          ctx.fill();
+          ctx.fillStyle = '#16a34a';
+          ctx.beginPath();
+          ctx.arc(p.x + 18, p.y + 4, 14, 0, Math.PI * 2);
+          ctx.arc(p.x + p.w - 20, p.y + 2, 16, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Garage crates, workbench, metal rack
+          ctx.fillStyle = p.style === 'metal_low' ? '#475569' : '#b45309';
+          ctx.beginPath();
+          ctx.roundRect(p.x, p.y, p.w, p.h, 5);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(15, 23, 42, 0.35)';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(p.x + 2, p.y + 2, p.w - 4, p.h - 4);
+        }
+
+        ctx.restore();
+      }
+    }
+
+    function drawScratchingPosts() {
+      for (const post of scratchingPosts) {
+        ctx.save();
+
+        // Heavy wooden base
+        ctx.fillStyle = '#78350f';
+        ctx.beginPath();
+        ctx.roundRect(post.x - 14, GROUND_Y - 12, post.w + 28, 12, 5);
+        ctx.fill();
+
+        // Cardboard / sisal scratching column
+        ctx.fillStyle = '#d6b37c';
+        ctx.beginPath();
+        ctx.roundRect(post.x, post.y, post.w, post.h - 10, [6, 6, 0, 0]);
+        ctx.fill();
+
+        // Corrugated texture bands
+        ctx.strokeStyle = '#a8844c';
+        ctx.lineWidth = 2;
+        for (let sy = post.y + 10; sy < GROUND_Y - 14; sy += 9) {
+          ctx.beginPath();
+          ctx.moveTo(post.x + 3, sy);
+          ctx.lineTo(post.x + post.w - 3, sy);
+          ctx.stroke();
+        }
+
+        // Top plush cap
+        ctx.fillStyle = '#b91c1c';
+        ctx.beginPath();
+        ctx.roundRect(post.x - 4, post.y - 6, post.w + 8, 10, 5);
+        ctx.fill();
+
+        // Prompt when Luke is nearby
+        if (Math.abs(luke.x - (post.x + post.w / 2)) < 75) {
+          ctx.fillStyle = 'rgba(28, 25, 23, 0.8)';
+          ctx.beginPath();
+          ctx.roundRect(post.x + post.w / 2 - 42, post.y - 34, 84, 20, 10);
+          ctx.fill();
+          ctx.fillStyle = '#fde047';
+          ctx.font = '800 11px Nunito, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('Press [S] Scratch', post.x + post.w / 2, post.y - 20);
+        }
+
+        ctx.restore();
+      }
+    }
+
+    function drawObstacles() {
+      for (const obs of obstacles) {
+        ctx.save();
+        if (obs.type === 'vacuum') {
+          // Robot vacuum disc
+          ctx.fillStyle = '#1e293b';
+          ctx.beginPath();
+          ctx.roundRect(obs.x, obs.y + 14, obs.w, obs.h - 14, 10);
+          ctx.fill();
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(obs.x + obs.w / 2, obs.y + 22, 4, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (obs.type === 'pot') {
+          // Terracotta flower pot + greenery
+          ctx.fillStyle = '#c2410c';
+          ctx.beginPath();
+          ctx.moveTo(obs.x + 4, obs.y + 14);
+          ctx.lineTo(obs.x + obs.w - 4, obs.y + 14);
+          ctx.lineTo(obs.x + obs.w - 9, GROUND_Y);
+          ctx.lineTo(obs.x + 9, GROUND_Y);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = '#16a34a';
+          ctx.beginPath();
+          ctx.arc(obs.x + obs.w / 2, obs.y + 10, 14, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Red garage toolbox
+          ctx.fillStyle = '#dc2626';
+          ctx.beginPath();
+          ctx.roundRect(obs.x, obs.y + 8, obs.w, obs.h - 8, 6);
+          ctx.fill();
+          ctx.strokeStyle = '#991b1b';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(obs.x + 14, obs.y + 2, obs.w - 28, 7);
+        }
+        ctx.restore();
+      }
+    }
+
+    function drawTreats() {
+      const bob = Math.sin(game.time * 4.5) * 4;
+      for (const t of game.treats) {
+        if (t.collected) continue;
+        ctx.save();
+        ctx.translate(t.x, t.y + bob);
+
+        if (t.kind === 'fish' || t.kind === 'gold_fish') {
+          const isGold = t.kind === 'gold_fish';
+          // Glow halo
+          ctx.fillStyle = isGold ? 'rgba(250, 204, 21, 0.28)' : 'rgba(56, 189, 248, 0.22)';
+          ctx.beginPath();
+          ctx.arc(0, 0, isGold ? 18 : 15, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Fish body + tail
+          ctx.fillStyle = isGold ? '#f59e0b' : '#0284c7';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 11, 6, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(-9, 0);
+          ctx.lineTo(-16, -6);
+          ctx.lineTo(-16, 6);
+          ctx.closePath();
+          ctx.fill();
+
+          // Eye
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(6, -1.5, 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          // Crunchy kibble star/nugget
+          ctx.fillStyle = 'rgba(251, 146, 60, 0.24)';
+          ctx.beginPath();
+          ctx.arc(0, 0, 13, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#b45309';
+          ctx.beginPath();
+          ctx.roundRect(-8, -6, 16, 12, 5);
+          ctx.fill();
+          ctx.fillStyle = '#f59e0b';
+          ctx.beginPath();
+          ctx.arc(-2, -1, 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      }
+    }
+
+    /**
+     * Draw Fritz (older man with white hair, round glasses, slight pot belly,
+     * shirt and trousers) & Luke's Red Food Bowl!
+     */
+    function drawFritzAndFoodStation() {
+      const bx = foodStation.bowlX;
+      const by = GROUND_Y;
+
+      // Red Food Bowl
+      ctx.fillStyle = '#e11d48';
+      ctx.beginPath();
+      ctx.moveTo(bx - 22, by);
+      ctx.lineTo(bx + 22, by);
+      ctx.lineTo(bx + 17, by - 14);
+      ctx.lineTo(bx - 17, by - 14);
+      ctx.closePath();
+      ctx.fill();
+
+      // Kibble mound in bowl
+      ctx.fillStyle = '#b45309';
+      ctx.beginPath();
+      ctx.arc(bx, by - 14, 13, Math.PI, 0);
+      ctx.fill();
+
+      // Fritz (Stationed at fx, fy)
+      const fx = foodStation.fritzX;
+      const fy = foodStation.fritzY;
+      const breath = Math.sin(game.time * 2.4) * 2;
+
+      ctx.save();
+      ctx.translate(fx, fy);
+
+      // Shoes
+      ctx.fillStyle = '#3f2e21';
+      ctx.beginPath();
+      ctx.roundRect(-24, -12, 20, 12, 5);
+      ctx.roundRect(2, -12, 20, 12, 5);
+      ctx.fill();
+
+      // Trousers (warm charcoal/khaki slacks)
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(-20, -68, 16, 58);
+      ctx.fillRect(2, -68, 16, 58);
+
+      // Collared Shirt with slight pot belly
+      ctx.fillStyle = '#3b82f6';
+      ctx.beginPath();
+      ctx.ellipse(-2, -104 + breath * 0.4, 28, 40, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Belly button / shirt placket line
+      ctx.strokeStyle = '#1d4ed8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-8, -138);
+      ctx.lineTo(-12, -68);
+      ctx.stroke();
+
+      // Fritz's Head (facing left toward Luke!)
+      ctx.fillStyle = '#fed7aa';
+      ctx.beginPath();
+      ctx.arc(-4, -162 + breath, 22, 0, Math.PI * 2);
+      ctx.fill();
+
+      // White Hair (fluffy side & back hair of an older gentleman)
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.arc(-1, -167 + breath, 22, -Math.PI * 0.75, Math.PI * 0.45);
+      ctx.fill();
+
+      // Round Glasses
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.arc(-15, -162 + breath, 6.5, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Happy Eye & Warm Smile
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      ctx.arc(-16, -162 + breath, 2, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#9a3412';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.arc(-14, -152 + breath, 7, 0.15 * Math.PI, 0.75 * Math.PI);
+      ctx.stroke();
+
+      // Friendly Arm waving / holding treat scoop toward Luke
+      const wave = Math.sin(game.time * 4) * 0.15;
+      ctx.save();
+      ctx.translate(-12, -124 + breath);
+      ctx.rotate(foodStation.reached ? -0.5 : wave);
+      ctx.fillStyle = '#2563eb';
+      ctx.beginPath();
+      ctx.roundRect(-34, -7, 34, 14, 7);
+      ctx.fill();
+      ctx.fillStyle = '#fed7aa';
+      ctx.beginPath();
+      ctx.arc(-36, 0, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      ctx.restore();
+    }
+
+    /**
+     * ==========================================================================
+     * PROCEDURAL CHARACTER RENDERER FOR LUKE (Brown/Grey Mackerel Tabby Cat)
+     * Matches Luke's turnaround sheet:
+     * - Mackerel tabby stripes, "M" forehead marking, warm cream/tan muzzle & belly,
+     *   green-gold eyes, pink nose, white whiskers, red collar + silver bell.
+     * - Full animations: Idle, Walk, Jump/Fall, Crouch/Crawl, Roll Over (Belly),
+     *   Grooming (licking raised paw), Scratching (standing on hind legs), Victory!
+     * ==========================================================================
+     */
+    function drawLuke() {
+      ctx.save();
+      ctx.translate(luke.x, luke.y);
+
+      // Ground contact shadow
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, luke.state === 'roll' ? 38 : 30, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Invulnerability blink flash
+      if (luke.invulnTimer > 0 && Math.floor(luke.invulnTimer * 16) % 2 === 0) {
+        ctx.globalAlpha = 0.55;
+      }
+
+      ctx.scale(luke.facing * luke.squashX, luke.squashY);
+
+      const furBase = '#7a6855';      // Warm brown-grey tabby base
+      const furDark = '#2b221b';      // Mackerel tabby dark stripes
+      const furBelly = '#c9a679';     // Warm tan/cream belly & muzzle
+      const collarRed = '#dc2626';    // Luke's red collar
+
+      if (luke.state === 'roll') {
+        // --- POSE: ROLLED OVER ON BACK FOR BELLY RUBS ---
+        const wiggle = Math.sin(game.time * 18) * luke.rubWiggle * 4;
+        ctx.translate(0, -18 + wiggle * 0.3);
+        ctx.rotate(wiggle * 0.02);
+
+        // Wagging Tail
+        ctx.strokeStyle = furBase;
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-30, 4);
+        ctx.quadraticCurveTo(-50, -6 + Math.sin(luke.tailPhase * 2) * 10, -56, -16);
+        ctx.stroke();
+
+        // Back / Flank on ground
+        ctx.fillStyle = furBase;
+        ctx.beginPath();
+        ctx.ellipse(0, 2, 34, 16, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Exposed Soft Warm Tan Belly!
+        ctx.fillStyle = furBelly;
+        ctx.beginPath();
+        ctx.ellipse(-2, -3, 25, 11, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Belly fur V-tufts
+        ctx.strokeStyle = '#8c6d46';
+        ctx.lineWidth = 1.6;
+        [-8, 0, 8].forEach((bx) => {
+          ctx.beginPath();
+          ctx.moveTo(bx - 3, -5);
+          ctx.lineTo(bx, -2);
+          ctx.lineTo(bx + 3, -5);
+          ctx.stroke();
+        });
+
+        // Four curled up paws
+        ctx.fillStyle = furBase;
+        [
+          [-18, -14],
+          [-8, -16],
+          [10, -16],
+          [18, -13]
+        ].forEach(([px, py], idx) => {
+          const pawTwitch = Math.sin(game.time * 12 + idx) * (1.5 + luke.rubWiggle * 3);
+          ctx.beginPath();
+          ctx.ellipse(px, py + pawTwitch, 5, 7, 0.2, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Red Collar + Bell
+        ctx.strokeStyle = collarRed;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(19, -9);
+        ctx.lineTo(23, 9);
+        ctx.stroke();
+        ctx.fillStyle = '#e2e8f0';
+        ctx.beginPath();
+        ctx.arc(21, -10, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Tilted Happy Head
+        drawLukeHead(29, -4, -0.35, 'happy');
+      } else if (luke.state === 'groom') {
+        // --- POSE: SITTING UPRIGHT & LICKING RAISED PAW ---
+        // Tail curled around base
+        ctx.strokeStyle = furBase;
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-14, -6);
+        ctx.quadraticCurveTo(-34, -8, -28, -24 + Math.sin(luke.tailPhase) * 3);
+        ctx.stroke();
+
+        // Sitting Body
+        ctx.fillStyle = furBase;
+        ctx.beginPath();
+        ctx.ellipse(-2, -24, 18, 24, -0.1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Tabby Stripes on Back
+        drawBodyStripes(-14, -36, 20, 24, furDark);
+
+        // Chest Fur
+        ctx.fillStyle = furBelly;
+        ctx.beginPath();
+        ctx.ellipse(8, -24, 9, 16, 0.1, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Planting Hind & Front Support Paws
+        ctx.fillStyle = furBase;
+        ctx.beginPath();
+        ctx.roundRect(-12, -8, 16, 8, 4);
+        ctx.roundRect(2, -8, 12, 8, 4);
+        ctx.fill();
+
+        // Red Collar + Silver Bell
+        drawCollar(6, -42, collarRed);
+
+        // Raised Front Paw Licking Motion!
+        const lickCycle = Math.sin(game.time * 9);
+        ctx.fillStyle = furBase;
+        ctx.beginPath();
+        ctx.ellipse(15, -42 + lickCycle * 3, 6, 9, -0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cute Pink Tongue
+        if (lickCycle > 0) {
+          ctx.fillStyle = '#fb7185';
+          ctx.beginPath();
+          ctx.ellipse(17, -45, 4, 2.5, 0.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        drawLukeHead(8, -54 + lickCycle * 1.2, 0.12, 'happy');
+      } else if (luke.state === 'scratch') {
+        // --- POSE: STANDING ON HIND LEGS SCRATCHING POST ---
+        const swipe = Math.sin(game.time * 24) * 7;
+
+        // Tail
+        ctx.strokeStyle = furBase;
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-14, -14);
+        ctx.quadraticCurveTo(-36, -24, -34, -44);
+        ctx.stroke();
+
+        // Upright Stretched Torso
+        ctx.fillStyle = furBase;
+        ctx.beginPath();
+        ctx.ellipse(0, -34, 15, 28, 0.25, 0, Math.PI * 2);
+        ctx.fill();
+        drawBodyStripes(-10, -48, 18, 28, furDark);
+
+        // Hind legs planted
+        ctx.fillStyle = furBase;
+        ctx.beginPath();
+        ctx.roundRect(-14, -12, 16, 12, 5);
+        ctx.fill();
+
+        // Alternating Swiping Front Paws!
+        ctx.fillStyle = furBase;
+        ctx.beginPath();
+        ctx.roundRect(8, -56 + swipe, 18, 8, 4);
+        ctx.roundRect(10, -46 - swipe, 18, 8, 4);
+        ctx.fill();
+
+        drawCollar(8, -54, collarRed);
+        drawLukeHead(12, -66, -0.1, 'alert');
+      } else {
+        // --- POSE: STANDARD QUADRUPED (IDLE / WALK / JUMP / FALL / CROUCH / CRAWL / VICTORY) ---
+        const isLow = (luke.state === 'crouch' || luke.state === 'crawl');
+        const bodyY = isLow ? -16 : -26;
+        const bodyRx = isLow ? 30 : 25;
+        const bodyRy = isLow ? 11 : 14;
+
+        // Expressive Tail
+        ctx.strokeStyle = furBase;
+        ctx.lineWidth = 7.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-bodyRx + 3, bodyY - 2);
+        const tailTipY =
+          luke.state === 'jump'
+            ? bodyY + 12
+            : luke.state === 'fall'
+            ? bodyY - 22
+            : bodyY - 18 + Math.sin(luke.tailPhase) * 8;
+        ctx.quadraticCurveTo(-bodyRx - 14, bodyY - 12, -bodyRx - 20, tailTipY);
+        ctx.stroke();
+
+        // Tail Dark Stripes
+        ctx.strokeStyle = furDark;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-bodyRx - 10, bodyY - 9);
+        ctx.lineTo(-bodyRx - 7, bodyY - 4);
+        ctx.stroke();
+
+        // Articulated Legs
+        const swing =
+          luke.state === 'walk' || luke.state === 'crawl'
+            ? Math.sin(luke.walkCycle) * (isLow ? 7 : 10)
+            : luke.state === 'jump'
+            ? 12
+            : luke.state === 'fall'
+            ? -8
+            : 0;
+
+        const legH = isLow ? 10 : 18;
+        const legTopY = bodyY + bodyRy - 4;
+
+        // Back legs (far & near)
+        drawLeg(-15 - swing * 0.8, legTopY, legH, furDark);
+        drawLeg(-12 + swing, legTopY, legH, furBase);
+
+        // Torso
+        ctx.fillStyle = furBase;
+        ctx.beginPath();
+        ctx.ellipse(0, bodyY, bodyRx, bodyRy, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Warm Tan Belly Under-curve
+        ctx.fillStyle = furBelly;
+        ctx.beginPath();
+        ctx.ellipse(2, bodyY + bodyRy - 3, bodyRx * 0.72, 4.5, 0, 0, Math.PI);
+        ctx.fill();
+
+        // Mackerel Tabby Back Stripes
+        drawBodyStripes(-14, bodyY - bodyRy + 2, 26, bodyRy * 1.4, furDark);
+
+        // Front legs (far & near)
+        drawLeg(12 + swing * 0.8, legTopY, legH, furDark);
+        drawLeg(15 - swing, legTopY, legH, furBase);
+
+        // Red Collar & Silver Bell
+        const headX = isLow ? 26 : 21;
+        const headY = isLow ? -21 : -38;
+        drawCollar(headX - 5, headY + 11, collarRed);
+
+        // Luke's Head
+        const expr =
+          luke.state === 'victory'
+            ? 'happy'
+            : luke.state === 'jump' || luke.state === 'crawl'
+            ? 'alert'
+            : 'neutral';
+        drawLukeHead(headX, headY, isLow ? 0.08 : 0, expr);
+      }
+
+      ctx.restore();
+    }
+
+    function drawLeg(x, topY, height, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(x - 4.5, topY, 9, height, 4);
+      ctx.fill();
+      // Cute paw tip
+      ctx.fillStyle = '#c9a679';
+      ctx.beginPath();
+      ctx.ellipse(x + 1.5, topY + height - 1, 5.5, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawBodyStripes(startX, topY, width, height, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2.6;
+      ctx.lineCap = 'round';
+      for (let sx = startX; sx <= startX + width; sx += 7) {
+        ctx.beginPath();
+        ctx.moveTo(sx, topY + 2);
+        ctx.quadraticCurveTo(sx - 2, topY + height * 0.5, sx + 1, topY + height * 0.85);
+        ctx.stroke();
+      }
+    }
+
+    function drawCollar(x, y, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 4.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x - 4, y - 5);
+      ctx.lineTo(x + 6, y + 6);
+      ctx.stroke();
+
+      // Tiny Silver Bell
+      ctx.fillStyle = '#f1f5f9';
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(x + 7, y + 7, 3.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    function drawLukeHead(x, y, tilt = 0, expression = 'neutral') {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(tilt);
+
+      const furBase = '#7a6855';
+      const furDark = '#2b221b';
+      const furCream = '#e6cfb3';
+
+      // Back Ear
+      ctx.fillStyle = '#5c4d3e';
+      ctx.beginPath();
+      ctx.moveTo(-4, -10);
+      ctx.lineTo(-9, -24);
+      ctx.lineTo(4, -13);
+      ctx.closePath();
+      ctx.fill();
+
+      // Main Head Circle
+      ctx.fillStyle = furBase;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 15, 13.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Front Ear + Pink Inner Ear
+      ctx.fillStyle = furBase;
+      ctx.beginPath();
+      ctx.moveTo(-1, -10);
+      ctx.lineTo(4, -25);
+      ctx.lineTo(11, -10);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#e5a9a9';
+      ctx.beginPath();
+      ctx.moveTo(1, -11);
+      ctx.lineTo(4, -21);
+      ctx.lineTo(8, -11);
+      ctx.closePath();
+      ctx.fill();
+
+      // Classic Tabby "M" Forehead Marking
+      ctx.strokeStyle = furDark;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(2, -9);
+      ctx.lineTo(4, -12);
+      ctx.lineTo(6, -9);
+      ctx.lineTo(8, -12);
+      ctx.lineTo(10, -9);
+      ctx.stroke();
+
+      // Cheek Tabby Stripes
+      ctx.beginPath();
+      ctx.moveTo(-4, 2);
+      ctx.lineTo(-10, 1);
+      ctx.moveTo(-4, 5);
+      ctx.lineTo(-9, 6);
+      ctx.stroke();
+
+      // Warm Cream Muzzle & Chin
+      ctx.fillStyle = furCream;
+      ctx.beginPath();
+      ctx.ellipse(9, 4.5, 7.5, 5.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes (Expressive Green-Gold or Happy Squint)
+      if (expression === 'happy' || luke.isBlinking) {
+        ctx.strokeStyle = furDark;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.arc(6, -2, 3.5, Math.PI, 0);
+        ctx.stroke();
+      } else {
+        // Green-gold feline eye
+        ctx.fillStyle = '#a3b84c';
+        ctx.beginPath();
+        ctx.ellipse(6.5, -2, 3.4, 3.8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Vertical slit pupil
+        ctx.fillStyle = '#14110f';
+        ctx.beginPath();
+        ctx.ellipse(7.2, -2, 1.3, 3.1, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Eye shine
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(5.8, -3.2, 1.1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Cute Pink Nose
+      ctx.fillStyle = '#e07a7a';
+      ctx.beginPath();
+      ctx.moveTo(13, 1.5);
+      ctx.lineTo(16.5, 1.5);
+      ctx.lineTo(14.8, 4.2);
+      ctx.closePath();
+      ctx.fill();
+
+      // Mouth (Happy Meow Open Mouth on Victory!)
+      if (luke.state === 'victory') {
+        ctx.fillStyle = '#be123c';
+        ctx.beginPath();
+        ctx.ellipse(12.5, 7.5, 4, 3.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.strokeStyle = furDark;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(14.5, 4.5);
+        ctx.quadraticCurveTo(12.5, 7.5, 10, 6.5);
+        ctx.stroke();
+      }
+
+      // Delicate White Whiskers
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(11, 3);
+      ctx.lineTo(22, 1);
+      ctx.moveTo(11, 5);
+      ctx.lineTo(22, 5.5);
+      ctx.moveTo(10, 7);
+      ctx.lineTo(20, 9.5);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawParticlesAndText() {
+      for (const p of particles) {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+        ctx.fillStyle = p.color;
+        if (p.kind === 'heart') {
+          ctx.font = `${Math.round(p.size * 2)}px sans-serif`;
+          ctx.fillText('♥', p.x, p.y);
+        } else {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      for (const ft of floatingTexts) {
+        ctx.save();
+        ctx.globalAlpha = Math.min(1, ft.life * 1.3);
+        ctx.font = '800 15px Fredoka, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.strokeStyle = 'rgba(28, 25, 23, 0.85)';
+        ctx.lineWidth = 4;
+        ctx.strokeText(ft.text, ft.x, ft.y);
+        ctx.fillStyle = ft.color;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+    }
+
+    function render() {
+      const scale = canvas.height / VIRTUAL_HEIGHT;
+      const viewWidth = canvas.width / scale;
+
+      ctx.save();
+      ctx.scale(scale, scale);
+      ctx.translate(-game.cameraX, 0);
+
+      drawBackgroundAndZones(viewWidth);
+      drawBackgroundDepthProps(viewWidth);
+      drawPlatforms();
+      drawScratchingPosts();
+      drawObstacles();
+      drawTreats();
+      drawFritzAndFoodStation();
+      drawLuke();
+      drawParticlesAndText();
+      drawForegroundDepthProps(viewWidth);
+
+      ctx.restore();
+    }
+
+    // ==========================================================================
+    // 9. MAIN ANIMATION LOOP
+    // ==========================================================================
+    let lastTimestamp = 0;
+    function gameLoop(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = Math.min(0.05, (timestamp - lastTimestamp) / 1000);
+      lastTimestamp = timestamp;
+
+      update(dt);
+      render();
+      requestAnimationFrame(gameLoop);
+    }
+
+    window.onload = function () {
+      updateHUD();
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>
